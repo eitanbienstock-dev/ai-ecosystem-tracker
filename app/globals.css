@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  background-color: #0e0f11;
+}
+
+body {
+  background-color: #0e0f11;
+  color: #e7e8ea;
+}
+
+::selection {
+  background-color: #e8b339;
+  color: #0e0f11;
+}
+
+* {
+  scrollbar-color: #2a2d33 #0e0f11;
+}
+
+.input {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #2a2d33;
+  background-color: #16181c;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #e7e8ea;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #e8b339;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
