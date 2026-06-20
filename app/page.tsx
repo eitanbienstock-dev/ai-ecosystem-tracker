@@ -99,10 +99,10 @@ export default async function HomePage() {
             <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
               <th className="px-4 py-3">Company</th>
               <th className="px-4 py-3">Sector</th>
-              <th className="px-4 py-3">Score</th>
               <th className="px-4 py-3">Market cap</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Ecosystem trajectory</th>
+              <th className="px-4 py-3">Score</th>
             </tr>
           </thead>
           <tbody>
@@ -121,25 +121,6 @@ export default async function HomePage() {
                 </td>
                 <td className="px-4 py-3 text-muted">
                   {(c.sector_tags ?? []).join(", ") || "—"}
-                </td>
-                <td className="px-4 py-3">
-                  {(() => {
-                    const score = latestScoreByCompany.get(c.id);
-                    if (!score || score.composite_score === null) {
-                      return <span className="text-muted">not scored</span>;
-                    }
-                    return (
-                      <span
-                        className={`cursor-help font-mono font-semibold ${scoreColor(score.composite_score)}`}
-                        title={score.thesis ?? ""}
-                      >
-                        {score.composite_score}
-                        <span className="ml-1 text-xs text-muted">
-                          · conviction {score.conviction_score ?? "—"}/5
-                        </span>
-                      </span>
-                    );
-                  })()}
                 </td>
                 <td className="px-4 py-3 font-mono text-[#e7e8ea]">
                   <span
@@ -160,6 +141,25 @@ export default async function HomePage() {
                 </td>
                 <td className={`px-4 py-3 ${trajectoryColor(c.ecosystem_trajectory)}`}>
                   {c.ecosystem_trajectory ?? "—"}
+                </td>
+                <td className="px-4 py-3">
+                  {(() => {
+                    const score = latestScoreByCompany.get(c.id);
+                    if (!score || score.composite_score === null) {
+                      return <span className="text-muted">not scored</span>;
+                    }
+                    return (
+                      <span
+                        className={`cursor-help font-mono font-semibold ${scoreColor(score.composite_score)}`}
+                        title={score.thesis ?? ""}
+                      >
+                        {score.composite_score}
+                        <span className="ml-1 text-xs text-muted">
+                          · conviction {score.conviction_score ?? "—"}/5
+                        </span>
+                      </span>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}
