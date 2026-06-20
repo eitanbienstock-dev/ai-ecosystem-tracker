@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { supabase, Company } from "@/lib/supabase";
+import { supabase, Company, Score } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,13 @@ function statusColor(status: string) {
 function trajectoryColor(t: string | null) {
   if (t === "strengthening") return "text-rise";
   if (t === "weakening") return "text-fall";
+  return "text-muted";
+}
+
+function scoreColor(score: number | null) {
+  if (score === null) return "text-muted";
+  if (score >= 65) return "text-rise";
+  if (score >= 50) return "text-signal";
   return "text-muted";
 }
 
@@ -44,7 +51,23 @@ export default async function HomePage() {
     );
   }
 
-  const list = (companies ?? []) as Company[];
+  const { data: scores } = await supabase
+    .from("scores")
+    .select("*")
+    .order("scored_at", { ascending: false });
+
+  const latestScoreByCompany = new Map<string, Score>();
+  for (const s of (scores ?? []) as Score[]) {
+    if (!latestScoreByCompany.has(s.company_id)) {
+      latestScoreByCompany.set(s.company_id, s);
+    }
+  }
+
+  const list = ((companies ?? []) as Company[]).sort((a, b) => {
+    const scoreA = latestScoreByCompany.get(a.id)?.composite_score ?? -1;
+    const scoreB = latestScoreByCompany.get(b.id)?.composite_score ?? -1;
+    return scoreB - scoreA;
+  });
 
   if (list.length === 0) {
     return (
@@ -76,6 +99,7 @@ export default async function HomePage() {
             <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
               <th className="px-4 py-3">Company</th>
               <th className="px-4 py-3">Sector</th>
+              <th className="px-4 py-3">Score</th>
               <th className="px-4 py-3">Market cap</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Ecosystem trajectory</th>
@@ -97,6 +121,25 @@ export default async function HomePage() {
                 </td>
                 <td className="px-4 py-3 text-muted">
                   {(c.sector_tags ?? []).join(", ") || "—"}
+                </td>
+                <td className="px-4 py-3">
+                  {(() => {
+                    const score = latestScoreByCompany.get(c.id);
+                    if (!score || score.composite_score === null) {
+                      return <span className="text-muted">not scored</span>;
+                    }
+                    return (
+                      <span
+                        className={`cursor-help font-mono font-semibold ${scoreColor(score.composite_score)}`}
+                        title={score.thesis ?? ""}
+                      >
+                        {score.composite_score}
+                        <span className="ml-1 text-xs text-muted">
+                          · conviction {score.conviction_score ?? "—"}/5
+                        </span>
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="px-4 py-3 font-mono text-[#e7e8ea]">
                   <span
