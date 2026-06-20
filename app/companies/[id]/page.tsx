@@ -82,7 +82,14 @@ export default async function CompanyDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-lg text-[#e7e8ea]">
+          <span
+            className="cursor-help font-mono text-lg text-[#e7e8ea] underline decoration-dotted decoration-muted underline-offset-2"
+            title={
+              c.market_cap === null
+                ? "Not yet researched"
+                : `Source: ${c.market_cap_source ?? "not recorded"} · As of ${c.market_cap_updated_at ?? "unknown date"}`
+            }
+          >
             {fmtMarketCap(c.market_cap)}
           </span>
           <Link

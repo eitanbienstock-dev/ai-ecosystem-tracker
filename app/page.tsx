@@ -99,7 +99,16 @@ export default async function HomePage() {
                   {(c.sector_tags ?? []).join(", ") || "—"}
                 </td>
                 <td className="px-4 py-3 font-mono text-[#e7e8ea]">
-                  {formatMarketCap(c.market_cap)}
+                  <span
+                    className="cursor-help underline decoration-dotted decoration-muted underline-offset-2"
+                    title={
+                      c.market_cap === null
+                        ? "Not yet researched"
+                        : `Source: ${c.market_cap_source ?? "not recorded"} · As of ${c.market_cap_updated_at ?? "unknown date"}`
+                    }
+                  >
+                    {formatMarketCap(c.market_cap)}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   <span className={`badge ${statusColor(c.research_status)}`}>

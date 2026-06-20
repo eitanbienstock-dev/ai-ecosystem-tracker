@@ -16,6 +16,7 @@ export type Company = {
   ai_category: string | null;
   market_cap: number | null;
   market_cap_updated_at: string | null;
+  market_cap_source: string | null;
   research_status: string;
   description: string | null;
   key_people: { name: string; role: string }[] | null;
