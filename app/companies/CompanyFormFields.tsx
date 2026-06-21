@@ -3,14 +3,26 @@ import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 import { SECTOR_TAGS } from "@/lib/tags";
 
 const AI_CATEGORIES = [
-  "infrastructure",
-  "software",
   "semiconductors",
-  "robotics_automation",
-  "cybersecurity",
+  "power_infrastructure",
+  "compute_cloud",
   "data_layer",
+  "foundation_models",
+  "mlops_tooling",
+  "applications",
+  "cybersecurity",
+  "robotics_physical",
   "other",
 ];
+
+const AI_MATERIALITY = ["core_to_thesis", "significant", "moderate", "peripheral"];
+
+const MATERIALITY_HINTS: Record<string, string> = {
+  core_to_thesis: "AI is the reason this company exists, not a feature layered on",
+  significant: "A real, material pivot underway, but a substantial non-AI business remains",
+  moderate: "AI features layered onto an existing, pre-AI business",
+  peripheral: "AI is one input among many, not central to the investment case",
+};
 
 const RESEARCH_STATUSES = [
   "watching",
@@ -59,26 +71,44 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
             ))}
           </select>
         </Field>
-        <Field label="Research status">
+        <Field label="AI materiality">
           <select
-            name="research_status"
-            defaultValue={company?.research_status ?? "watching"}
+            name="ai_materiality"
+            defaultValue={company?.ai_materiality ?? ""}
             className="input"
           >
-            {RESEARCH_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s.replace("_", " ")}
+            <option value="">Select materiality</option>
+            {AI_MATERIALITY.map((m) => (
+              <option key={m} value={m}>
+                {m.replace(/_/g, " ")}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-muted">
-            {RESEARCH_STATUSES.filter((s) => STATUS_DEFINITIONS[s])
-              .map((s) => `${s.replace("_", " ")}: ${STATUS_DEFINITIONS[s]}`)
-              .slice(0, 3)
-              .join(" — ")}
-          </p>
+          {company?.ai_materiality && (
+            <p className="mt-1 text-xs text-muted">{MATERIALITY_HINTS[company.ai_materiality]}</p>
+          )}
         </Field>
       </div>
+
+      <Field label="Research status">
+        <select
+          name="research_status"
+          defaultValue={company?.research_status ?? "watching"}
+          className="input"
+        >
+          {RESEARCH_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s.replace("_", " ")}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-muted">
+          {RESEARCH_STATUSES.filter((s) => STATUS_DEFINITIONS[s])
+            .map((s) => `${s.replace("_", " ")}: ${STATUS_DEFINITIONS[s]}`)
+            .slice(0, 3)
+            .join(" — ")}
+        </p>
+      </Field>
 
       <Field label="Sector tags">
         <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 rounded border border-line bg-panelhi p-3">
@@ -112,6 +142,18 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
           rows={4}
           className="input"
           placeholder="What does this company actually do, in one or two sentences"
+        />
+      </Field>
+
+      <Field
+        label="Circularity note"
+        hint="Optional. Related-party structures, e.g. a chip supplier that is also an investor and whose largest customers buy from it"
+      >
+        <textarea
+          name="circularity_note"
+          defaultValue={company?.circularity_note ?? ""}
+          rows={3}
+          className="input"
         />
       </Field>
 

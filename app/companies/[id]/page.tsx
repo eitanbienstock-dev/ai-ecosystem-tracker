@@ -82,7 +82,12 @@ export default async function CompanyDetailPage({
             {c.ai_category && (
               <div className="flex items-baseline gap-2">
                 <span className="w-16 text-[10px] uppercase tracking-wide text-muted">Category</span>
-                <span className="badge bg-panelhi text-[#e7e8ea]">{c.ai_category.replace("_", " ")}</span>
+                <span className="badge bg-panelhi text-[#e7e8ea]">{c.ai_category.replace(/_/g, " ")}</span>
+                {c.ai_materiality && (
+                  <span className="text-xs text-muted">
+                    {c.ai_materiality.replace(/_/g, " ")} to the investment thesis
+                  </span>
+                )}
               </div>
             )}
             {(c.sector_tags ?? []).length > 0 && (
@@ -202,6 +207,9 @@ export default async function CompanyDetailPage({
             value={c.ecosystem_leverage_direction?.replace("_", " ") ?? "—"}
           />
           <Row label="Trajectory" value={c.ecosystem_trajectory ?? "—"} />
+          {c.circularity_note && (
+            <p className="mt-2 text-xs text-signal">Circularity: {c.circularity_note}</p>
+          )}
         </Section>
       </div>
 

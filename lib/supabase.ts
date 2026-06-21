@@ -37,6 +37,8 @@ export type Company = {
   customer_concentration_risk: string | null;
   ecosystem_leverage_direction: string | null;
   ecosystem_trajectory: string | null;
+  ai_materiality: string | null;
+  circularity_note: string | null;
   last_reviewed_at: string | null;
   shares_held: number | null;
   entry_date: string | null;

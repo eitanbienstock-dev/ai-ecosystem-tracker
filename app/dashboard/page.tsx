@@ -3,22 +3,28 @@ import { supabase, Company } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  infrastructure: "Infrastructure",
-  software: "Software",
   semiconductors: "Semiconductors",
-  robotics_automation: "Robotics & Automation",
-  cybersecurity: "Cybersecurity",
+  power_infrastructure: "Power & Data Center Infrastructure",
+  compute_cloud: "Compute Infrastructure / Cloud",
   data_layer: "Data Layer",
+  foundation_models: "Foundation Models / AI Labs",
+  mlops_tooling: "MLOps, Observability & Tooling",
+  applications: "Enterprise Software & Applications",
+  cybersecurity: "Cybersecurity",
+  robotics_physical: "Robotics & Autonomous Systems",
   other: "Other",
 };
 
 const CATEGORY_ORDER = [
-  "infrastructure",
-  "software",
-  "data_layer",
-  "cybersecurity",
   "semiconductors",
-  "robotics_automation",
+  "power_infrastructure",
+  "compute_cloud",
+  "data_layer",
+  "foundation_models",
+  "mlops_tooling",
+  "applications",
+  "cybersecurity",
+  "robotics_physical",
   "other",
 ];
 
@@ -91,8 +97,13 @@ export default async function DashboardPage() {
                         ))}
                       </div>
                     </div>
-                    <span className={`badge shrink-0 ${statusColor(c.research_status)}`}>
-                      {c.research_status.replace("_", " ")}
+                    <span className="flex shrink-0 flex-col items-end gap-1">
+                      <span className={`badge ${statusColor(c.research_status)}`}>
+                        {c.research_status.replace("_", " ")}
+                      </span>
+                      {c.ai_materiality && (
+                        <span className="text-[10px] text-muted">{c.ai_materiality.replace(/_/g, " ")}</span>
+                      )}
                     </span>
                   </div>
                 ))}

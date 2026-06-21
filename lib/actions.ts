@@ -17,6 +17,8 @@ export async function createCompany(formData: FormData) {
     ticker: String(formData.get("ticker") || "") || null,
     sector_tags: parseTags(formData),
     ai_category: String(formData.get("ai_category") || "") || null,
+    ai_materiality: String(formData.get("ai_materiality") || "") || null,
+    circularity_note: String(formData.get("circularity_note") || "") || null,
     market_cap: formData.get("market_cap")
       ? Number(formData.get("market_cap"))
       : null,
@@ -187,6 +189,8 @@ export async function updateCompany(id: string, formData: FormData) {
     ticker: String(formData.get("ticker") || "") || null,
     sector_tags: parseTags(formData),
     ai_category: String(formData.get("ai_category") || "") || null,
+    ai_materiality: String(formData.get("ai_materiality") || "") || null,
+    circularity_note: String(formData.get("circularity_note") || "") || null,
     market_cap: formData.get("market_cap")
       ? Number(formData.get("market_cap"))
       : null,
