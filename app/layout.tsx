@@ -20,12 +20,20 @@ export default function RootLayout({
             <Link href="/" className="font-display text-lg font-bold text-signal">
               AI Ecosystem Tracker
             </Link>
-            <Link
-              href="/companies/new"
-              className="rounded border border-line bg-panelhi px-3 py-1.5 text-sm font-medium text-[#e7e8ea] hover:border-signal hover:text-signal"
-            >
-              + Add company
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="rounded border border-line bg-panelhi px-3 py-1.5 text-sm font-medium text-[#e7e8ea] hover:border-signal hover:text-signal"
+              >
+                Coverage map
+              </Link>
+              <Link
+                href="/companies/new"
+                className="rounded border border-line bg-panelhi px-3 py-1.5 text-sm font-medium text-[#e7e8ea] hover:border-signal hover:text-signal"
+              >
+                + Add company
+              </Link>
+            </div>
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>

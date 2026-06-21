@@ -1,5 +1,6 @@
 import { Company } from "@/lib/supabase";
 import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
+import { SECTOR_TAGS } from "@/lib/tags";
 
 const AI_CATEGORIES = [
   "infrastructure",
@@ -79,12 +80,20 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
         </Field>
       </div>
 
-      <Field label="Sector tags" hint="Comma-separated, e.g. observability, cloud infra">
-        <input
-          name="sector_tags"
-          defaultValue={(company?.sector_tags ?? []).join(", ")}
-          className="input"
-        />
+      <Field label="Sector tags">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 rounded border border-line bg-panelhi p-3">
+          {SECTOR_TAGS.map((tag) => (
+            <label key={tag} className="flex items-center gap-1.5 text-xs text-[#cfd1d5]">
+              <input
+                type="checkbox"
+                name="sector_tags"
+                value={tag}
+                defaultChecked={(company?.sector_tags ?? []).includes(tag)}
+              />
+              {tag}
+            </label>
+          ))}
+        </div>
       </Field>
 
       <Field label="Market cap (USD)" hint="Plain number, e.g. 4200000000 for $4.2B">

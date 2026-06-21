@@ -6,12 +6,8 @@ import { redirect } from "next/navigation";
 
 const ORG_ID = process.env.DEFAULT_ORG_ID as string;
 
-function parseTags(raw: FormDataEntryValue | null): string[] {
-  if (!raw) return [];
-  return String(raw)
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
+function parseTags(formData: FormData): string[] {
+  return formData.getAll("sector_tags").map((t) => String(t));
 }
 
 export async function createCompany(formData: FormData) {
@@ -19,7 +15,7 @@ export async function createCompany(formData: FormData) {
     organisation_id: ORG_ID,
     name: String(formData.get("name") || ""),
     ticker: String(formData.get("ticker") || "") || null,
-    sector_tags: parseTags(formData.get("sector_tags")),
+    sector_tags: parseTags(formData),
     ai_category: String(formData.get("ai_category") || "") || null,
     market_cap: formData.get("market_cap")
       ? Number(formData.get("market_cap"))
@@ -177,7 +173,7 @@ export async function updateCompany(id: string, formData: FormData) {
   const payload = {
     name: String(formData.get("name") || ""),
     ticker: String(formData.get("ticker") || "") || null,
-    sector_tags: parseTags(formData.get("sector_tags")),
+    sector_tags: parseTags(formData),
     ai_category: String(formData.get("ai_category") || "") || null,
     market_cap: formData.get("market_cap")
       ? Number(formData.get("market_cap"))

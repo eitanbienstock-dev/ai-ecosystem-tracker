@@ -69,50 +69,53 @@ export default async function CompanyDetailPage({
               <span className="ml-3 font-mono text-base text-muted">{c.ticker}</span>
             )}
           </h1>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span
-              className="badge cursor-help bg-panelhi text-muted"
-              title={STATUS_DEFINITIONS[c.research_status]}
-            >
-              {c.research_status.replace("_", " ")}
-            </span>
+
+          <div className="mt-3 space-y-1.5">
+            <div className="flex items-baseline gap-2">
+              <span className="w-16 text-[10px] uppercase tracking-wide text-muted">Status</span>
+              <span className="badge bg-signal/15 text-signal">{c.research_status.replace("_", " ")}</span>
+              <span className="text-xs text-muted">{STATUS_DEFINITIONS[c.research_status]}</span>
+            </div>
             {c.ai_category && (
-              <span className="badge bg-panelhi text-muted">
-                {c.ai_category.replace("_", " ")}
-              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="w-16 text-[10px] uppercase tracking-wide text-muted">Category</span>
+                <span className="badge bg-panelhi text-[#e7e8ea]">{c.ai_category.replace("_", " ")}</span>
+              </div>
             )}
-            {(c.sector_tags ?? []).map((t) => (
-              <span key={t} className="badge bg-panel text-muted border border-line">
-                {t}
-              </span>
-            ))}
+            {(c.sector_tags ?? []).length > 0 && (
+              <div className="flex items-baseline gap-2">
+                <span className="w-16 shrink-0 text-[10px] uppercase tracking-wide text-muted">Tags</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {(c.sector_tags ?? []).map((t) => (
+                    <span key={t} className="badge border border-line bg-panel text-muted">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <p className="mt-2 max-w-md text-xs text-muted">{STATUS_DEFINITIONS[c.research_status]}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="text-right">
           {liveCap ? (
-            <span
-              className="cursor-help font-mono text-lg text-[#e7e8ea]"
-              title={`Live via Finnhub · fetched ${new Date(liveCap.fetchedAt).toLocaleTimeString()}`}
-            >
-              {fmtMarketCap(liveCap.marketCap)}
+            <div>
+              <span className="font-mono text-lg text-[#e7e8ea]">{fmtMarketCap(liveCap.marketCap)}</span>
               <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rise align-middle" />
-            </span>
+              <p className="text-[11px] text-muted">live via Finnhub, {new Date(liveCap.fetchedAt).toLocaleTimeString()}</p>
+            </div>
           ) : (
-            <span
-              className="cursor-help font-mono text-lg text-[#e7e8ea] underline decoration-dotted decoration-muted underline-offset-2"
-              title={
-                c.market_cap === null
-                  ? "Not yet researched"
-                  : `Stored snapshot, live fetch unavailable · Source: ${c.market_cap_source ?? "not recorded"} · As of ${c.market_cap_updated_at ?? "unknown date"}`
-              }
-            >
-              {fmtMarketCap(c.market_cap)}
-            </span>
+            <div>
+              <span className="font-mono text-lg text-[#e7e8ea]">{fmtMarketCap(c.market_cap)}</span>
+              <p className="text-[11px] text-muted">
+                {c.market_cap === null
+                  ? "not yet researched"
+                  : `${c.market_cap_source ?? "source not recorded"} · as of ${c.market_cap_updated_at ?? "unknown date"}`}
+              </p>
+            </div>
           )}
           <Link
             href={`/companies/${c.id}/edit`}
-            className="rounded border border-line px-3 py-1.5 text-sm text-muted hover:border-signal hover:text-signal"
+            className="mt-2 inline-block rounded border border-line px-3 py-1.5 text-sm text-muted hover:border-signal hover:text-signal"
           >
             Edit
           </Link>
@@ -120,9 +123,10 @@ export default async function CompanyDetailPage({
       </div>
 
       {c.description && (
-        <p className="mb-8 max-w-3xl text-sm leading-relaxed text-[#cfd1d5]">
-          {c.description}
-        </p>
+        <div className="mb-8 max-w-3xl">
+          <p className="text-sm leading-relaxed text-[#cfd1d5]">{c.description}</p>
+          <p className="mt-1 text-[11px] text-muted">Last reviewed {c.last_reviewed_at ?? "never"}</p>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-5">
