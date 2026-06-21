@@ -85,6 +85,12 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                     </div>
                     {s.thesis && <p className="mt-2 text-xs text-[#cfd1d5]">{s.thesis}</p>}
                     {s.biggest_risk && <p className="mt-1 text-xs text-fall">Risk: {s.biggest_risk}</p>}
+                    <Link
+                      href={`/companies/${c.id}`}
+                      className="mt-3 inline-block text-xs text-signal hover:underline"
+                    >
+                      View full research (financials, management, moat, partnerships, catalysts) →
+                    </Link>
                   </td>
                 </tr>
               )}
