@@ -3,6 +3,8 @@ import { promoteToInvested } from "@/lib/actions";
 import { latestScore } from "@/lib/portfolio";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function PromotePage({ params }: { params: { id: string } }) {
   const { data: company } = await supabase.from("companies").select("*").eq("id", params.id).single();
   if (!company) notFound();

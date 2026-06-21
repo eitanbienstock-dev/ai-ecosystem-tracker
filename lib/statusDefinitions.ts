@@ -4,7 +4,7 @@ export const STATUS_DEFINITIONS: Record<string, string> = {
   researching:
     "Actively being researched. This is where the deep work happens: financials, management, AI moat, ecosystem position, partnerships, catalysts.",
   active_watch:
-    "Research is done and scored. Real conviction exists. Deliberately waiting for the right entry, price, timing, a derisking catalyst, not waiting for more information.",
+    "Research is done and scored, a complete picture exists. Deliberately waiting for the right entry, price, timing, a derisking catalyst, not waiting for more information. This gate is about completeness, not conviction: a low conviction score here is real information the score itself carries, not a sign the status is wrong.",
   invested: "Real capital deployed.",
   passed: "Evaluated and rejected, with a recorded reason.",
   exited: "Was invested, no longer is.",

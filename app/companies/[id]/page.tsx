@@ -4,6 +4,8 @@ import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase"
 import { getLiveMarketCap } from "@/lib/marketData";
 import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 
+export const dynamic = "force-dynamic";
+
 function fmtPct(v: number | null) {
   return v === null ? "—" : `${v}%`;
 }
