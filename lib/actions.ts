@@ -155,6 +155,18 @@ export async function recordTransaction(companyId: string, formData: FormData) {
   revalidatePath(`/companies/${companyId}`);
 }
 
+export async function updateResearchStatus(companyId: string, formData: FormData) {
+  const newStatus = String(formData.get("research_status"));
+  const today = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase
+    .from("companies")
+    .update({ research_status: newStatus, last_reviewed_at: today, updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+  revalidatePath(`/companies/${companyId}`);
+}
+
 export async function reevaluateCompany(companyId: string, _formData: FormData) {
   const today = new Date().toISOString().slice(0, 10);
   const { error } = await supabase

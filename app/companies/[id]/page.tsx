@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase";
-import { getLiveMarketCap } from "@/lib/marketData";
+import { getLiveMarketCap, getLivePrice } from "@/lib/marketData";
 import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +39,7 @@ export default async function CompanyDetailPage({
   const c = company as Company;
 
   const liveCap = c.ticker ? await getLiveMarketCap(c.ticker) : null;
+  const livePrice = c.ticker ? await getLivePrice(c.ticker) : null;
 
   const { data: partnerships } = await supabase
     .from("partnerships")
@@ -103,11 +104,17 @@ export default async function CompanyDetailPage({
             <div>
               <span className="font-mono text-lg text-[#e7e8ea]">{fmtMarketCap(liveCap.marketCap)}</span>
               <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rise align-middle" />
+              {livePrice && (
+                <span className="ml-2 font-mono text-sm text-muted">${livePrice.price.toFixed(2)}/sh</span>
+              )}
               <p className="text-[11px] text-muted">live via Finnhub, {new Date(liveCap.fetchedAt).toLocaleTimeString()}</p>
             </div>
           ) : (
             <div>
               <span className="font-mono text-lg text-[#e7e8ea]">{fmtMarketCap(c.market_cap)}</span>
+              {livePrice && (
+                <span className="ml-2 font-mono text-sm text-muted">${livePrice.price.toFixed(2)}/sh</span>
+              )}
               <p className="text-[11px] text-muted">
                 {c.market_cap === null
                   ? "not yet researched"
