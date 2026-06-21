@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase";
+import { getLiveMarketCap } from "@/lib/marketData";
 
 function fmtPct(v: number | null) {
   return v === null ? "—" : `${v}%`;
@@ -33,6 +34,8 @@ export default async function CompanyDetailPage({
 
   if (!company) notFound();
   const c = company as Company;
+
+  const liveCap = c.ticker ? await getLiveMarketCap(c.ticker) : null;
 
   const { data: partnerships } = await supabase
     .from("partnerships")
@@ -82,16 +85,26 @@ export default async function CompanyDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span
-            className="cursor-help font-mono text-lg text-[#e7e8ea] underline decoration-dotted decoration-muted underline-offset-2"
-            title={
-              c.market_cap === null
-                ? "Not yet researched"
-                : `Source: ${c.market_cap_source ?? "not recorded"} · As of ${c.market_cap_updated_at ?? "unknown date"}`
-            }
-          >
-            {fmtMarketCap(c.market_cap)}
-          </span>
+          {liveCap ? (
+            <span
+              className="cursor-help font-mono text-lg text-[#e7e8ea]"
+              title={`Live via Finnhub · fetched ${new Date(liveCap.fetchedAt).toLocaleTimeString()}`}
+            >
+              {fmtMarketCap(liveCap.marketCap)}
+              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rise align-middle" />
+            </span>
+          ) : (
+            <span
+              className="cursor-help font-mono text-lg text-[#e7e8ea] underline decoration-dotted decoration-muted underline-offset-2"
+              title={
+                c.market_cap === null
+                  ? "Not yet researched"
+                  : `Stored snapshot, live fetch unavailable · Source: ${c.market_cap_source ?? "not recorded"} · As of ${c.market_cap_updated_at ?? "unknown date"}`
+              }
+            >
+              {fmtMarketCap(c.market_cap)}
+            </span>
+          )}
           <Link
             href={`/companies/${c.id}/edit`}
             className="rounded border border-line px-3 py-1.5 text-sm text-muted hover:border-signal hover:text-signal"

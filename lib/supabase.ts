@@ -38,6 +38,15 @@ export type Company = {
   ecosystem_leverage_direction: string | null;
   ecosystem_trajectory: string | null;
   last_reviewed_at: string | null;
+  shares_held: number | null;
+  entry_date: string | null;
+  entry_price: number | null;
+  exit_date: string | null;
+  exit_price: number | null;
+  target_weight_override_pct: number | null;
+  override_rationale: string | null;
+  needs_review: boolean;
+  rejection_reason: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -73,9 +82,27 @@ export type Score = {
   management_ownership_score: number | null;
   catalyst_clarity_score: number | null;
   valuation_score: number | null;
+  ecosystem_position_note: string | null;
+  financial_quality_note: string | null;
+  ai_moat_note: string | null;
+  management_ownership_note: string | null;
+  catalyst_clarity_note: string | null;
+  valuation_note: string | null;
+  conviction_note: string | null;
   composite_score: number | null;
   conviction_score: number | null;
   thesis: string | null;
   biggest_risk: string | null;
   scored_at: string;
+};
+
+export type DecisionLogEntry = {
+  id: string;
+  company_id: string;
+  entry_type: "initiated" | "added" | "trimmed" | "exited" | "reviewed";
+  entry_date: string;
+  shares_delta: number | null;
+  price: number | null;
+  note: string | null;
+  created_at: string;
 };
