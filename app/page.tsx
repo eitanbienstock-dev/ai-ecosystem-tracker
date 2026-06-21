@@ -1,5 +1,6 @@
 import { supabase, Company, Score, DecisionLogEntry } from "@/lib/supabase";
 import { computeTargetWeights, computePositionValues, entryScore, latestScore, daysHeld } from "@/lib/portfolio";
+import { STATUS_TIER_ORDER } from "@/lib/statusDefinitions";
 import PortfolioCard from "./PortfolioCard";
 import PipelineTable from "./PipelineTable";
 import ArchiveSection from "./ArchiveSection";
@@ -39,11 +40,14 @@ export default async function HomePage() {
     overdueCountByCompany.set(row.company_id, (overdueCountByCompany.get(row.company_id) ?? 0) + 1);
   }
 
-  pipeline.sort(
-    (a, b) =>
+  pipeline.sort((a, b) => {
+    const tierDiff = (STATUS_TIER_ORDER[a.research_status] ?? 9) - (STATUS_TIER_ORDER[b.research_status] ?? 9);
+    if (tierDiff !== 0) return tierDiff;
+    return (
       (latestScore(scoresByCompany[b.id])?.composite_score ?? -1) -
       (latestScore(scoresByCompany[a.id])?.composite_score ?? -1)
-  );
+    );
+  });
 
   const targetWeights = computeTargetWeights(invested, scoresByCompany);
   const { valueByCompany, totalValue } = await computePositionValues(invested);
@@ -100,7 +104,7 @@ export default async function HomePage() {
       <div className="mb-10">
         <div className="mb-3">
           <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Pipeline</h1>
-          <p className="text-xs text-muted">ranked by composite score &middot; candidates for the next deliberate addition</p>
+          <p className="text-xs text-muted">grouped by stage, then ranked by composite score &middot; candidates for the next deliberate addition</p>
         </div>
         {pipeline.length === 0 ? (
           <div className="rounded border border-dashed border-line py-10 text-center">

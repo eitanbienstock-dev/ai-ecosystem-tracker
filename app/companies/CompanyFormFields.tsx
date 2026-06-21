@@ -1,4 +1,5 @@
 import { Company } from "@/lib/supabase";
+import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 
 const AI_CATEGORIES = [
   "infrastructure",
@@ -69,6 +70,12 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
               </option>
             ))}
           </select>
+          <p className="mt-1 text-xs text-muted">
+            {RESEARCH_STATUSES.filter((s) => STATUS_DEFINITIONS[s])
+              .map((s) => `${s.replace("_", " ")}: ${STATUS_DEFINITIONS[s]}`)
+              .slice(0, 3)
+              .join(" — ")}
+          </p>
         </Field>
       </div>
 

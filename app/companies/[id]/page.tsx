@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase";
 import { getLiveMarketCap } from "@/lib/marketData";
+import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 
 function fmtPct(v: number | null) {
   return v === null ? "—" : `${v}%`;
@@ -69,7 +70,10 @@ export default async function CompanyDetailPage({
             )}
           </h1>
           <div className="mt-2 flex flex-wrap gap-2">
-            <span className="badge bg-panelhi text-muted">
+            <span
+              className="badge cursor-help bg-panelhi text-muted"
+              title={STATUS_DEFINITIONS[c.research_status]}
+            >
               {c.research_status.replace("_", " ")}
             </span>
             {c.ai_category && (
@@ -83,6 +87,7 @@ export default async function CompanyDetailPage({
               </span>
             ))}
           </div>
+          <p className="mt-2 max-w-md text-xs text-muted">{STATUS_DEFINITIONS[c.research_status]}</p>
         </div>
         <div className="flex items-center gap-3">
           {liveCap ? (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Company, Score } from "@/lib/supabase";
+import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 
 type Row = { company: Company; score: Score | undefined };
 
@@ -18,6 +19,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
         <thead>
           <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3">Company</th>
+            <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Composite</th>
             <th className="px-4 py-3">Conviction</th>
             <th className="px-4 py-3"></th>
@@ -32,6 +34,19 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                     {c.name}
                   </Link>{" "}
                   <span className="font-mono text-xs text-muted">{c.ticker}</span>
+                  {c.rejection_reason && (
+                    <span className="ml-2 text-xs text-muted" title={`Previously rejected: ${c.rejection_reason}`}>
+                      (previously passed)
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className="badge cursor-help bg-panelhi text-muted"
+                    title={STATUS_DEFINITIONS[c.research_status]}
+                  >
+                    {c.research_status.replace("_", " ")}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   <button
@@ -60,7 +75,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
               </tr>
               {openId === c.id && s && (
                 <tr key={`${c.id}-rationale`} className="border-b border-line bg-panelhi">
-                  <td colSpan={4} className="px-4 py-3">
+                  <td colSpan={5} className="px-4 py-3">
                     <p className="mb-2 text-xs font-medium text-[#e7e8ea]">{c.name} — composite score breakdown</p>
                     {[
                       [s.ecosystem_position_score, s.ecosystem_position_note],
