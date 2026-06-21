@@ -69,12 +69,18 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
 
   return (
     <div className="rounded border border-line bg-panel p-5">
-      <div className="flex cursor-pointer items-end justify-between" onClick={() => setOpen(!open)}>
-        <div>
-          <span className="font-medium text-[#e7e8ea]">{company.name}</span>{" "}
+      <div className="flex items-end justify-between">
+        <div className="cursor-pointer" onClick={() => setOpen(!open)}>
+          <Link
+            href={`/companies/${company.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="font-medium text-[#e7e8ea] hover:text-signal"
+          >
+            {company.name}
+          </Link>{" "}
           <span className="font-mono text-xs text-muted">{company.ticker}</span>
         </div>
-        <div className="flex items-end gap-4">
+        <div className="flex items-end gap-4 cursor-pointer" onClick={() => setOpen(!open)}>
           <div className="text-right">
             <div className="text-[10px] text-muted">composite</div>
             <div className="font-mono text-lg font-semibold text-[#e7e8ea]">
