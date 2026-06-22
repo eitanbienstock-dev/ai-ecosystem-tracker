@@ -218,6 +218,14 @@ export default async function CompanyDetailPage({
             value={c.ecosystem_leverage_direction?.replace("_", " ") ?? "—"}
           />
           <Row label="Trajectory" value={c.ecosystem_trajectory ?? "—"} />
+          {latestScore?.ecosystem_position_note ? (
+            <p className="mt-2 text-sm text-[#cfd1d5]">{latestScore.ecosystem_position_note}</p>
+          ) : (
+            <p className="mt-2 text-xs text-muted">
+              No detailed reasoning recorded yet for these tags, that is itself worth flagging
+              rather than treating the bare tags above as sufficient.
+            </p>
+          )}
           {c.circularity_note && (
             <p className="mt-2 text-xs text-signal">Circularity: {c.circularity_note}</p>
           )}
