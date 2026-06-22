@@ -49,6 +49,21 @@ export default async function HomePage() {
     );
   });
 
+  const pipelineIds = pipeline.map((c) => c.id);
+  const { data: pipelineCatalysts } = await supabase
+    .from("catalysts")
+    .select("*")
+    .in("company_id", pipelineIds.length ? pipelineIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const signalByCompany = new Map<string, { overdue: number; newlyResolved: number }>();
+  for (const cat of pipelineCatalysts ?? []) {
+    const entry = signalByCompany.get(cat.company_id) ?? { overdue: 0, newlyResolved: 0 };
+    if (cat.status === "pending" && cat.expected_date && cat.expected_date <= today) entry.overdue += 1;
+    if (cat.resolved_at && cat.resolved_at >= thirtyDaysAgo) entry.newlyResolved += 1;
+    signalByCompany.set(cat.company_id, entry);
+  }
+
   const targetWeights = computeTargetWeights(invested, scoresByCompany);
   const { valueByCompany, totalValue } = await computePositionValues(invested);
 
@@ -114,7 +129,13 @@ export default async function HomePage() {
             </Link>
           </div>
         ) : (
-          <PipelineTable rows={pipeline.map((c) => ({ company: c, score: latestScore(scoresByCompany[c.id]) }))} />
+          <PipelineTable
+            rows={pipeline.map((c) => ({
+              company: c,
+              score: latestScore(scoresByCompany[c.id]),
+              signal: signalByCompany.get(c.id),
+            }))}
+          />
         )}
       </div>
 

@@ -288,6 +288,9 @@ export default async function CompanyDetailPage({
             {latestScore.biggest_risk && (
               <p className="mt-1 text-xs text-fall">Risk: {latestScore.biggest_risk}</p>
             )}
+            {latestScore.watch_condition && (
+              <p className="mt-1 text-xs text-signal">Watching for: {latestScore.watch_condition}</p>
+            )}
           </div>
         )}
       </Section>

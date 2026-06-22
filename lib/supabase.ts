@@ -91,6 +91,7 @@ export type Score = {
   catalyst_clarity_note: string | null;
   valuation_note: string | null;
   conviction_note: string | null;
+  watch_condition: string | null;
   composite_score: number | null;
   conviction_score: number | null;
   thesis: string | null;

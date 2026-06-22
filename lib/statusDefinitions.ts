@@ -2,9 +2,9 @@ export const STATUS_DEFINITIONS: Record<string, string> = {
   watching:
     "Just sourced, on the radar. Little or no research done yet. The longlist.",
   researching:
-    "Actively being researched. This is where the deep work happens: financials, management, AI moat, ecosystem position, partnerships, catalysts.",
+    "Actively or fully researched, financials, management, AI moat, ecosystem position, partnerships, catalysts, and scored. Being researched and being scored is not the same as being promoted: this is the default home for anything researched, even when the research is complete.",
   active_watch:
-    "Research is done and scored, a complete picture exists. Deliberately waiting for the right entry, price, timing, a derisking catalyst, not waiting for more information. This gate is about completeness, not conviction: a low conviction score here is real information the score itself carries, not a sign the status is wrong.",
+    "Explicitly promoted, by you, usually prompted by something genuinely new (a catalyst resolving, a re-score moving meaningfully, an anchor partner's posture shifting). A high score alone does not put something here, a deliberate decision does.",
   invested: "Real capital deployed.",
   passed: "Evaluated and rejected, with a recorded reason.",
   exited: "Was invested, no longer is.",
