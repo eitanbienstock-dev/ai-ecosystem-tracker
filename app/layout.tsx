@@ -22,6 +22,12 @@ export default function RootLayout({
             </Link>
             <div className="flex items-center gap-3">
               <Link
+                href="/audit"
+                className="rounded border border-line bg-panelhi px-3 py-1.5 text-sm font-medium text-[#e7e8ea] hover:border-signal hover:text-signal"
+              >
+                Data quality
+              </Link>
+              <Link
                 href="/research"
                 className="rounded border border-line bg-panelhi px-3 py-1.5 text-sm font-medium text-[#e7e8ea] hover:border-signal hover:text-signal"
               >
