@@ -139,12 +139,23 @@ export default async function CompanyDetailPage({
       {c.description && (
         <div className="mb-8 max-w-3xl">
           <p className="text-sm leading-relaxed text-[#cfd1d5]">{c.description}</p>
-          <p className="mt-1 text-[11px] text-muted">Last reviewed {c.last_reviewed_at ?? "never"}</p>
+          <p className="mt-1 text-[11px] text-muted">
+            Last reviewed {c.last_reviewed_at ?? "never"}
+            {c.next_review_date && (
+              <span className={c.next_review_date <= new Date().toISOString().slice(0, 10) ? "ml-2 text-signal" : "ml-2"}>
+                · next review {c.next_review_date}
+                {c.next_review_date <= new Date().toISOString().slice(0, 10) ? " (due)" : ""}
+              </span>
+            )}
+          </p>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-5">
         <Section title="Financial signals">
+          <p className="mb-2 text-[11px] text-muted">
+            {c.financial_data_period ?? "period not recorded"} · as of {c.last_reviewed_at ?? "unknown date"}
+          </p>
           <Row label="Revenue growth" value={fmtPct(c.revenue_growth_pct)} />
           <Row label="Gross margin" value={fmtPct(c.gross_margin_pct)} />
           <Row label="AI revenue mix" value={fmtPct(c.ai_revenue_mix_pct)} />

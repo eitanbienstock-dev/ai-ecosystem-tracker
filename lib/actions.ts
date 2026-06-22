@@ -19,6 +19,8 @@ export async function createCompany(formData: FormData) {
     ai_category: String(formData.get("ai_category") || "") || null,
     ai_materiality: String(formData.get("ai_materiality") || "") || null,
     circularity_note: String(formData.get("circularity_note") || "") || null,
+    next_review_date: String(formData.get("next_review_date") || "") || null,
+    financial_data_period: String(formData.get("financial_data_period") || "") || null,
     market_cap: formData.get("market_cap")
       ? Number(formData.get("market_cap"))
       : null,
@@ -191,6 +193,8 @@ export async function updateCompany(id: string, formData: FormData) {
     ai_category: String(formData.get("ai_category") || "") || null,
     ai_materiality: String(formData.get("ai_materiality") || "") || null,
     circularity_note: String(formData.get("circularity_note") || "") || null,
+    next_review_date: String(formData.get("next_review_date") || "") || null,
+    financial_data_period: String(formData.get("financial_data_period") || "") || null,
     market_cap: formData.get("market_cap")
       ? Number(formData.get("market_cap"))
       : null,

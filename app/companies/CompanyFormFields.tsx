@@ -157,6 +157,24 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
         />
       </Field>
 
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Next review date" hint="Shows as a flag in the pipeline once this date arrives">
+          <input
+            name="next_review_date"
+            type="date"
+            defaultValue={company?.next_review_date ?? ""}
+            className="input"
+          />
+        </Field>
+        <Field label="Financial data period" hint="e.g. Q1 2026, YoY">
+          <input
+            name="financial_data_period"
+            defaultValue={company?.financial_data_period ?? ""}
+            className="input"
+          />
+        </Field>
+      </div>
+
       <p className="text-xs text-muted">
         Deeper layers, financials, management signals, AI moat, partnerships, and
         catalysts, are populated through research entries rather than this form.

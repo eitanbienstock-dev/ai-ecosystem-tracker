@@ -6,7 +6,11 @@ import { Company, Score } from "@/lib/supabase";
 import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 import { updateResearchStatus } from "@/lib/actions";
 
-type Row = { company: Company; score: Score | undefined; signal?: { overdue: number; newlyResolved: number } };
+type Row = {
+  company: Company;
+  score: Score | undefined;
+  signal?: { overdue: number; newlyResolved: number; reviewDue: boolean };
+};
 
 const dimLabels = ["ecosystem", "financial", "ai moat", "management", "catalyst", "valuation"];
 const dimWeights = [25, 20, 15, 15, 15, 10];
@@ -101,6 +105,14 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                       title="A catalyst's expected date has passed while still pending, worth checking what actually happened"
                     >
                       check due
+                    </span>
+                  )}
+                  {signal && signal.reviewDue && (
+                    <span
+                      className="badge ml-1.5 bg-signal/15 text-signal"
+                      title="The next review date you set for this company has arrived"
+                    >
+                      review due
                     </span>
                   )}
                   {confirmingId === c.id && (

@@ -39,6 +39,8 @@ export type Company = {
   ecosystem_trajectory: string | null;
   ai_materiality: string | null;
   circularity_note: string | null;
+  next_review_date: string | null;
+  financial_data_period: string | null;
   last_reviewed_at: string | null;
   shares_held: number | null;
   entry_date: string | null;

@@ -56,12 +56,19 @@ export default async function HomePage() {
     .in("company_id", pipelineIds.length ? pipelineIds : ["00000000-0000-0000-0000-000000000000"]);
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
-  const signalByCompany = new Map<string, { overdue: number; newlyResolved: number }>();
+  const signalByCompany = new Map<string, { overdue: number; newlyResolved: number; reviewDue: boolean }>();
   for (const cat of pipelineCatalysts ?? []) {
-    const entry = signalByCompany.get(cat.company_id) ?? { overdue: 0, newlyResolved: 0 };
+    const entry = signalByCompany.get(cat.company_id) ?? { overdue: 0, newlyResolved: 0, reviewDue: false };
     if (cat.status === "pending" && cat.expected_date && cat.expected_date <= today) entry.overdue += 1;
     if (cat.resolved_at && cat.resolved_at >= thirtyDaysAgo) entry.newlyResolved += 1;
     signalByCompany.set(cat.company_id, entry);
+  }
+  for (const c of pipeline) {
+    if (c.next_review_date && c.next_review_date <= today) {
+      const entry = signalByCompany.get(c.id) ?? { overdue: 0, newlyResolved: 0, reviewDue: false };
+      entry.reviewDue = true;
+      signalByCompany.set(c.id, entry);
+    }
   }
 
   const targetWeights = computeTargetWeights(invested, scoresByCompany);
