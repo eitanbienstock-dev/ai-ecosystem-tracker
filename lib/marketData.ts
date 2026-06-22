@@ -33,6 +33,35 @@ export async function getLivePrice(ticker: string): Promise<LivePrice | null> {
 }
 
 /**
+ * Fetches the closing price closest to (on or before) a given date, using
+ * daily candles. Looks back up to 5 calendar days to handle weekends and
+ * holidays robustly, and returns the most recent close at or before the
+ * target date.
+ */
+export async function getHistoricalPrice(ticker: string, dateStr: string): Promise<number | null> {
+  const apiKey = process.env.FINNHUB_API_KEY;
+  if (!apiKey || !ticker) return null;
+
+  try {
+    const target = new Date(dateStr + "T23:59:59Z");
+    const from = Math.floor((target.getTime() - 5 * 86_400_000) / 1000);
+    const to = Math.floor(target.getTime() / 1000);
+
+    const res = await fetch(
+      `${FINNHUB_BASE}/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=D&from=${from}&to=${to}&token=${apiKey}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.s !== "ok" || !Array.isArray(data.c) || data.c.length === 0) return null;
+    // Last element is the most recent close at or before the target date
+    return data.c[data.c.length - 1];
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetches current market cap for a ticker via Finnhub's company profile
  * endpoint. Returns null on any failure (missing key, bad ticker, rate
  * limit, network error) so callers can fall back to the stored research

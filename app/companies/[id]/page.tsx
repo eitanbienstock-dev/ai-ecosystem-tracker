@@ -316,6 +316,21 @@ export default async function CompanyDetailPage({
                 {latestScore.scored_at}
               </span>
             </div>
+            {latestScore.price_at_scoring && (
+              <p className="mb-3 text-xs text-muted">
+                Price at scoring: <span className="font-mono text-[#e7e8ea]">${Number(latestScore.price_at_scoring).toFixed(2)}</span>
+                {livePrice && (
+                  <>
+                    {" "}&middot; price now: <span className="font-mono text-[#e7e8ea]">${livePrice.price.toFixed(2)}</span>
+                    {" "}&middot;{" "}
+                    <span className={livePrice.price >= latestScore.price_at_scoring ? "text-rise" : "text-fall"}>
+                      {(((livePrice.price - latestScore.price_at_scoring) / latestScore.price_at_scoring) * 100).toFixed(1)}%
+                      {" "}since scoring
+                    </span>
+                  </>
+                )}
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-2 text-xs">
               {[
                 ["Ecosystem", latestScore.ecosystem_position_score, latestScore.ecosystem_position_note],

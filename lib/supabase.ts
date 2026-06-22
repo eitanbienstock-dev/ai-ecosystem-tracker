@@ -98,6 +98,9 @@ export type Score = {
   conviction_note: string | null;
   watch_condition: string | null;
   ecosystem_synthesis: string | null;
+  price_at_scoring: number | null;
+  price_at_scoring_date: string | null;
+  price_source: string | null;
   composite_score: number | null;
   conviction_score: number | null;
   thesis: string | null;
