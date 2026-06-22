@@ -274,14 +274,28 @@ export default async function CompanyDetailPage({
                 {latestScore.scored_at}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-3 text-xs text-muted">
-              <span>Ecosystem: {latestScore.ecosystem_position_score ?? "—"}</span>
-              <span>Financial: {latestScore.financial_quality_score ?? "—"}</span>
-              <span>AI moat: {latestScore.ai_moat_score ?? "—"}</span>
-              <span>Management: {latestScore.management_ownership_score ?? "—"}</span>
-              <span>Catalyst: {latestScore.catalyst_clarity_score ?? "—"}</span>
-              <span>Valuation: {latestScore.valuation_score ?? "—"}</span>
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              {[
+                ["Ecosystem", latestScore.ecosystem_position_score, latestScore.ecosystem_position_note],
+                ["Financial", latestScore.financial_quality_score, latestScore.financial_quality_note],
+                ["AI moat", latestScore.ai_moat_score, latestScore.ai_moat_note],
+                ["Management", latestScore.management_ownership_score, latestScore.management_ownership_note],
+                ["Catalyst", latestScore.catalyst_clarity_score, latestScore.catalyst_clarity_note],
+                ["Valuation", latestScore.valuation_score, latestScore.valuation_note],
+              ].map(([label, val, note]) => (
+                <div key={label as string}>
+                  <span className="font-mono font-medium text-[#e7e8ea]">{(val as number) ?? "—"}</span>{" "}
+                  <span className="text-muted">{label}</span>
+                  {note ? <div className="mt-0.5 text-[#cfd1d5]">{note as string}</div> : null}
+                </div>
+              ))}
             </div>
+            {latestScore.conviction_note && (
+              <p className="mt-3 text-sm text-[#cfd1d5]">
+                <span className="font-medium text-[#e7e8ea]">Why conviction is {latestScore.conviction_score}/5: </span>
+                {latestScore.conviction_note}
+              </p>
+            )}
             {latestScore.thesis && (
               <p className="mt-3 text-sm text-[#cfd1d5]">{latestScore.thesis}</p>
             )}
