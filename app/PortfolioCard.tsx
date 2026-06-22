@@ -151,6 +151,12 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
                   <div className="text-xs text-[#cfd1d5]">{currentScore.conviction_note}</div>
                 )}
               </div>
+              {currentScore.ecosystem_synthesis && (
+                <p className="mt-2 rounded bg-panel p-2 text-xs text-signal">
+                  <span className="font-medium">What the ecosystem position means: </span>
+                  {currentScore.ecosystem_synthesis}
+                </p>
+              )}
               {currentScore.thesis && <p className="mt-2 text-xs text-[#cfd1d5]">{currentScore.thesis}</p>}
               {currentScore.biggest_risk && (
                 <p className="mt-1 text-xs text-fall">Risk: {currentScore.biggest_risk}</p>

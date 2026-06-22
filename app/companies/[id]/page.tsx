@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase";
 import { getLiveMarketCap, getLivePrice } from "@/lib/marketData";
-import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
+import { STATUS_DEFINITIONS, LEVERAGE_DEFINITIONS, TRAJECTORY_DEFINITIONS } from "@/lib/statusDefinitions";
 
 export const dynamic = "force-dynamic";
 
@@ -214,16 +214,39 @@ export default async function CompanyDetailPage({
 
         <Section title="Ecosystem position">
           <Row
-            label="Leverage"
+            label={
+              <span title={c.ecosystem_leverage_direction ? LEVERAGE_DEFINITIONS[c.ecosystem_leverage_direction] : ""} className="cursor-help underline decoration-dotted decoration-muted underline-offset-2">
+                Leverage
+              </span>
+            }
             value={c.ecosystem_leverage_direction?.replace("_", " ") ?? "—"}
           />
-          <Row label="Trajectory" value={c.ecosystem_trajectory ?? "—"} />
+          {c.ecosystem_leverage_direction && (
+            <p className="mb-2 text-[11px] text-muted">{LEVERAGE_DEFINITIONS[c.ecosystem_leverage_direction]}</p>
+          )}
+          <Row
+            label={
+              <span title={c.ecosystem_trajectory ? TRAJECTORY_DEFINITIONS[c.ecosystem_trajectory] : ""} className="cursor-help underline decoration-dotted decoration-muted underline-offset-2">
+                Trajectory
+              </span>
+            }
+            value={c.ecosystem_trajectory ?? "—"}
+          />
+          {c.ecosystem_trajectory && (
+            <p className="mb-2 text-[11px] text-muted">{TRAJECTORY_DEFINITIONS[c.ecosystem_trajectory]}</p>
+          )}
           {latestScore?.ecosystem_position_note ? (
             <p className="mt-2 text-sm text-[#cfd1d5]">{latestScore.ecosystem_position_note}</p>
           ) : (
             <p className="mt-2 text-xs text-muted">
               No detailed reasoning recorded yet for these tags, that is itself worth flagging
               rather than treating the bare tags above as sufficient.
+            </p>
+          )}
+          {latestScore?.ecosystem_synthesis && (
+            <p className="mt-2 rounded bg-panelhi p-2.5 text-sm text-signal">
+              <span className="font-medium">What this means: </span>
+              {latestScore.ecosystem_synthesis}
             </p>
           )}
           {c.circularity_note && (
@@ -350,7 +373,7 @@ function Section({
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value }: { label: React.ReactNode; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-1 text-sm">
       <span className="text-muted">{label}</span>

@@ -183,6 +183,12 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                         <div className="mt-1 text-xs text-signal">Watching for: {s.watch_condition}</div>
                       )}
                     </div>
+                    {s.ecosystem_synthesis && (
+                      <p className="mt-2 rounded bg-panel p-2 text-xs text-signal">
+                        <span className="font-medium">What the ecosystem position means: </span>
+                        {s.ecosystem_synthesis}
+                      </p>
+                    )}
                     {s.thesis && <p className="mt-2 text-xs text-[#cfd1d5]">{s.thesis}</p>}
                     {s.biggest_risk && <p className="mt-1 text-xs text-fall">Risk: {s.biggest_risk}</p>}
                     <Link
