@@ -60,7 +60,13 @@ export default async function HomePage() {
   for (const cat of pipelineCatalysts ?? []) {
     const entry = signalByCompany.get(cat.company_id) ?? { overdue: 0, newlyResolved: 0, reviewDue: false };
     if (cat.status === "pending" && cat.expected_date && cat.expected_date <= today) entry.overdue += 1;
-    if (cat.resolved_at && cat.resolved_at >= thirtyDaysAgo) entry.newlyResolved += 1;
+    // Only counts as "new info" if it was actually resolved after being logged,
+    // a real transition during a check-in, not a catalyst that arrived already
+    // resolved at the moment the company was first researched.
+    const createdDate = cat.created_at ? String(cat.created_at).slice(0, 10) : null;
+    if (cat.resolved_at && cat.resolved_at >= thirtyDaysAgo && createdDate && cat.resolved_at > createdDate) {
+      entry.newlyResolved += 1;
+    }
     signalByCompany.set(cat.company_id, entry);
   }
   for (const c of pipeline) {
