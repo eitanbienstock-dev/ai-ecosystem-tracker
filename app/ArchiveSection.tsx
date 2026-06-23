@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Company, Score } from "@/lib/supabase";
 import { restoreToPipeline } from "@/lib/actions";
+import { formatDate } from "@/lib/format";
 
 type Row = { company: Company; score: Score | undefined };
 
@@ -43,7 +44,13 @@ export default function ArchiveSection({ rows }: { rows: Row[] }) {
                       <Link href={`/companies/${c.id}`} className="font-medium text-[#e7e8ea]">
                         {c.name}
                       </Link>{" "}
-                      <span className="font-mono text-xs text-muted">{c.ticker}</span>
+                      <span
+                      className={`font-mono text-xs text-muted ${
+                        (c.pending_digest_flags ?? []).length > 0 ? "rounded border border-signal px-1 ring-1 ring-signal" : ""
+                      }`}
+                    >
+                      {c.ticker}
+                    </span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "—"}</span>
@@ -53,8 +60,8 @@ export default function ArchiveSection({ rows }: { rows: Row[] }) {
                     </td>
                     <td className="px-4 py-3 text-xs text-muted">
                       {c.exit_date
-                        ? `exited ${c.exit_date}${c.exit_price ? ` at $${c.exit_price}` : ""}`
-                        : `passed ${c.last_reviewed_at ?? "unknown date"}`}
+                        ? `exited ${formatDate(c.exit_date)}${c.exit_price ? ` at $${c.exit_price}` : ""}`
+                        : `passed ${c.last_reviewed_at ? formatDate(c.last_reviewed_at) : "unknown date"}`}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <form action={restoreToPipeline.bind(null, c.id)}>

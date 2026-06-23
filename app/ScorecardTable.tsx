@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDate } from "@/lib/format";
 
 type Row = {
   id: string;
@@ -61,7 +62,7 @@ export default function ScorecardTable({ rows }: { rows: Row[] }) {
                 <span className="font-mono text-xs text-muted">{r.ticker}</span>
               </td>
               <td className="px-4 py-3 text-xs text-muted">
-                {r.scoredAt} ({r.daysSince}d ago)
+                {formatDate(r.scoredAt)} ({r.daysSince}d ago)
               </td>
               <td className="px-4 py-3 font-mono">{r.composite ?? "—"}</td>
               <td className="px-4 py-3 font-mono">{r.confidence ?? "—"}/5</td>

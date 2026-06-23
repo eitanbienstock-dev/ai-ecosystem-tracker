@@ -22,6 +22,7 @@ export type Company = {
   market_cap_source: string | null;
   research_status: string;
   pipeline_order: number | null;
+  pending_digest_flags: string[] | null;
   description: string | null;
   key_people: { name: string; role: string }[] | null;
   revenue_growth_pct: number | null;

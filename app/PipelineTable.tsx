@@ -98,8 +98,11 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                     {c.name}
                   </Link>{" "}
                   <span
-                    className="cursor-pointer font-mono text-xs text-muted hover:text-signal"
+                    className={`cursor-pointer font-mono text-xs text-muted hover:text-signal ${
+                      (c.pending_digest_flags ?? []).length > 0 ? "rounded border border-signal px-1 ring-1 ring-signal" : ""
+                    }`}
                     onClick={() => setOpenId(openId === c.id ? null : c.id)}
+                    title={(c.pending_digest_flags ?? []).length > 0 ? "A research digest entry may require updating this company" : undefined}
                   >
                     {c.ticker}
                   </span>

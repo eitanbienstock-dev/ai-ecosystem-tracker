@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Company, Score, DecisionLogEntry } from "@/lib/supabase";
 import { logReview, recordTransaction } from "@/lib/actions";
+import { formatDate } from "@/lib/format";
 
 type PortfolioCardData = {
   company: Company;
@@ -78,7 +79,14 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
           >
             {company.name}
           </Link>{" "}
-          <span className="font-mono text-xs text-muted">{company.ticker}</span>
+          <span
+            className={`font-mono text-xs text-muted ${
+              (company.pending_digest_flags ?? []).length > 0 ? "rounded border border-signal px-1 ring-1 ring-signal" : ""
+            }`}
+            title={(company.pending_digest_flags ?? []).length > 0 ? "A research digest entry may require updating this company" : undefined}
+          >
+            {company.ticker}
+          </span>
         </div>
         <div className="flex items-end gap-4 cursor-pointer" onClick={() => setOpen(!open)}>
           <div className="text-right">
@@ -165,15 +173,15 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
           )}
 
           <p className="mb-2 text-xs text-muted">
-            Entered {company.entry_date} at ${company.entry_price?.toFixed(2)} &middot; entry score{" "}
-            {entryScoreVal?.composite_score ?? "—"} &middot; last reviewed {company.last_reviewed_at ?? "never"}
+            Entered {formatDate(company.entry_date)} at ${company.entry_price?.toFixed(2)} &middot; entry score{" "}
+            {entryScoreVal?.composite_score ?? "—"} &middot; last reviewed {company.last_reviewed_at ? formatDate(company.last_reviewed_at) : "never"}
           </p>
 
           <div className="mb-3 space-y-1">
             {log.length === 0 && <p className="text-xs text-muted">No decision log entries yet.</p>}
             {log.map((l) => (
               <div key={l.id} className="text-xs">
-                <span className="font-mono text-muted">{l.entry_date}</span> — {l.entry_type}
+                <span className="font-mono text-muted">{formatDate(l.entry_date)}</span> — {l.entry_type}
                 {l.note ? `: ${l.note}` : ""}
               </div>
             ))}

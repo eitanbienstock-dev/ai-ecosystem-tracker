@@ -5,6 +5,7 @@ import { getLiveMarketCap, getLivePrice } from "@/lib/marketData";
 import { STATUS_DEFINITIONS, LEVERAGE_DEFINITIONS, TRAJECTORY_DEFINITIONS } from "@/lib/statusDefinitions";
 import DeleteCompanyButton from "../../DeleteCompanyButton";
 import { resolveCatalyst, markReviewed } from "@/lib/actions";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,13 @@ export default async function CompanyDetailPage({
 
   const latestScore = (scores ?? [])[0] as Score | undefined;
 
+  const { data: openDigestEntries } = (c.pending_digest_flags ?? []).length
+    ? await supabase
+        .from("research_digest")
+        .select("id, report_title, report_url, scanned_at")
+        .in("id", c.pending_digest_flags ?? [])
+    : { data: [] };
+
   return (
     <div>
       <div className="mb-6 flex items-start justify-between">
@@ -72,7 +80,14 @@ export default async function CompanyDetailPage({
           <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">
             {c.name}
             {c.ticker && (
-              <span className="ml-3 font-mono text-base text-muted">{c.ticker}</span>
+              <span
+                className={`ml-3 font-mono text-base text-muted ${
+                  (c.pending_digest_flags ?? []).length > 0 ? "rounded border border-signal px-1 ring-1 ring-signal" : ""
+                }`}
+                title={(c.pending_digest_flags ?? []).length > 0 ? "A research digest entry may require updating this company" : undefined}
+              >
+                {c.ticker}
+              </span>
             )}
           </h1>
 
@@ -126,7 +141,7 @@ export default async function CompanyDetailPage({
               <p className="text-[11px] text-muted">
                 {c.market_cap === null
                   ? "not yet researched"
-                  : `${c.market_cap_source ?? "source not recorded"} · as of ${c.market_cap_updated_at ?? "unknown date"}`}
+                  : `${c.market_cap_source ?? "source not recorded"} · as of ${c.market_cap_updated_at ? formatDate(c.market_cap_updated_at) : "unknown date"}`}
               </p>
             </div>
           )}
@@ -143,14 +158,34 @@ export default async function CompanyDetailPage({
       {c.description && (
         <div className="mb-8 max-w-3xl">
           <p className="text-sm leading-relaxed text-[#cfd1d5]">{c.description}</p>
-          <p className="mt-1 text-[11px] text-muted">Last reviewed {c.last_reviewed_at ?? "never"}</p>
+          <p className="mt-1 text-[11px] text-muted">Last reviewed {c.last_reviewed_at ? formatDate(c.last_reviewed_at) : "never"}</p>
+        </div>
+      )}
+
+      {(openDigestEntries ?? []).length > 0 && (
+        <div className="mb-8 max-w-3xl rounded border border-signal/40 bg-signal/10 p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-signal">
+            Research digest may require an update here
+          </p>
+          {(openDigestEntries ?? []).map((d) => (
+            <p key={d.id} className="text-sm text-[#cfd1d5]">
+              {d.report_url ? (
+                <a href={d.report_url} target="_blank" rel="noopener noreferrer" className="text-signal hover:underline">
+                  {d.report_title}
+                </a>
+              ) : (
+                d.report_title
+              )}{" "}
+              <span className="text-xs text-muted">scanned {formatDate(d.scanned_at)}</span>
+            </p>
+          ))}
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-5">
         <Section title="Financial signals">
           <p className="mb-2 text-[11px] text-muted">
-            {c.financial_data_period ?? "period not recorded"} · as of {c.last_reviewed_at ?? "unknown date"}
+            {c.financial_data_period ?? "period not recorded"} · as of {c.last_reviewed_at ? formatDate(c.last_reviewed_at) : "unknown date"}
           </p>
           <Row label="Revenue growth" value={fmtPct(c.revenue_growth_pct)} />
           <Row label="Gross margin" value={fmtPct(c.gross_margin_pct)} />
@@ -289,7 +324,7 @@ export default async function CompanyDetailPage({
                   <div className="flex items-center justify-between">
                     <span className="text-[#cfd1d5]">{cat.description}</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted">{cat.expected_date ?? ""}</span>
+                      <span className="font-mono text-xs text-muted">{cat.expected_date ? formatDate(cat.expected_date) : ""}</span>
                       <span className="badge bg-panelhi text-muted">{cat.status}</span>
                     </div>
                   </div>
@@ -337,7 +372,7 @@ export default async function CompanyDetailPage({
           {c.next_review_date <= today ? (
             <div className="flex items-center justify-between">
               <p className="text-sm text-signal">
-                A review was scheduled for {c.next_review_date} and that date has arrived. This is a manual
+                A review was scheduled for {formatDate(c.next_review_date)} and that date has arrived. This is a manual
                 reminder you set, not tied to any specific catalyst, marking it reviewed clears it.
               </p>
               <form action={markReviewed.bind(null, c.id)}>
@@ -350,7 +385,7 @@ export default async function CompanyDetailPage({
               </form>
             </div>
           ) : (
-            <p className="text-sm text-muted">Next review scheduled for {c.next_review_date}.</p>
+            <p className="text-sm text-muted">Next review scheduled for {formatDate(c.next_review_date)}.</p>
           )}
         </Section>
       )}
@@ -366,12 +401,12 @@ export default async function CompanyDetailPage({
               </span>
               <span className="text-sm text-muted">
                 confidence {latestScore.confidence_score ?? "—"}/5 · scored{" "}
-                {latestScore.scored_at}
+                {formatDate(latestScore.scored_at)}
               </span>
             </div>
             {latestScore.price_at_scoring && (
               <p className="mb-3 text-xs text-muted">
-                Price tracking from {latestScore.price_at_scoring_date ?? latestScore.scored_at}: <span className="font-mono text-[#e7e8ea]">${Number(latestScore.price_at_scoring).toFixed(2)}</span>
+                Price tracking from {formatDate(latestScore.price_at_scoring_date ?? latestScore.scored_at)}: <span className="font-mono text-[#e7e8ea]">${Number(latestScore.price_at_scoring).toFixed(2)}</span>
                 {livePrice && (
                   <>
                     {" "}&middot; price now: <span className="font-mono text-[#e7e8ea]">${livePrice.price.toFixed(2)}</span>
