@@ -52,15 +52,15 @@ export default async function ScorecardPage() {
       const priceThen = s.price_at_scoring ? Number(s.price_at_scoring) : null;
       const changePct = priceThen && livePrice ? ((livePrice - priceThen) / priceThen) * 100 : null;
       const daysSince = Math.round((Date.now() - new Date(s.scored_at).getTime()) / 86_400_000);
-      return { conviction: s.conviction_score, composite: s.composite_score, changePct, daysSince };
+      return { confidence: s.confidence_score, composite: s.composite_score, changePct, daysSince };
     })
     .filter((r) => r.changePct !== null);
 
   const n = graded.length;
   const avgDays = n > 0 ? graded.reduce((a, r) => a + r.daysSince, 0) / n : 0;
   const meetsThreshold = n >= MIN_N && avgDays >= MIN_AVG_DAYS;
-  const convictionCorr = meetsThreshold
-    ? pearson(graded.map((r) => r.conviction ?? 0), graded.map((r) => r.changePct as number))
+  const confidenceCorr = meetsThreshold
+    ? pearson(graded.map((r) => r.confidence ?? 0), graded.map((r) => r.changePct as number))
     : null;
   const compositeCorr = meetsThreshold
     ? pearson(graded.map((r) => r.composite ?? 0), graded.map((r) => r.changePct as number))
@@ -83,7 +83,7 @@ export default async function ScorecardPage() {
       scoredAt: s.scored_at,
       daysSince,
       composite: s.composite_score,
-      conviction: s.conviction_score,
+      confidence: s.confidence_score,
       priceThen,
       priceNow: livePrice,
       changePct,
@@ -105,9 +105,9 @@ export default async function ScorecardPage() {
         {meetsThreshold ? (
           <div className="flex gap-8">
             <div>
-              <p className="text-[10px] text-muted">Conviction ↔ forward return</p>
+              <p className="text-[10px] text-muted">Confidence ↔ forward return</p>
               <p className="font-mono text-2xl font-bold text-signal">
-                {convictionCorr !== null ? convictionCorr.toFixed(2) : "—"}
+                {confidenceCorr !== null ? confidenceCorr.toFixed(2) : "—"}
               </p>
             </div>
             <div>
@@ -124,11 +124,11 @@ export default async function ScorecardPage() {
           </p>
         )}
         <p className="mt-3 text-[11px] text-muted">
-          Correlation between conviction, and separately composite score, and each stock&apos;s return since
-          it was scored, across every score on record. A positive number means higher-conviction names have
-          tended to outperform lower-conviction names since being scored. Conviction reflects portfolio fit,
-          not a price-direction forecast, so this measures whether the ranking itself has value, not whether
-          any single call was right.
+          Correlation between confidence, and separately composite score, and each stock&apos;s return since
+          it was scored, across every score on record. A positive number for confidence means scores backed
+          by more verified, primary-source data have tended to outperform scores resting on thinner or
+          unconfirmed inputs, a test of whether data reliability itself predicts returns, not a
+          price-direction forecast on its own.
         </p>
       </div>
 

@@ -95,14 +95,14 @@ export type Score = {
   management_ownership_note: string | null;
   catalyst_clarity_note: string | null;
   valuation_note: string | null;
-  conviction_note: string | null;
+  confidence_note: string | null;
   watch_condition: string | null;
   ecosystem_synthesis: string | null;
   price_at_scoring: number | null;
   price_at_scoring_date: string | null;
   price_source: string | null;
   composite_score: number | null;
-  conviction_score: number | null;
+  confidence_score: number | null;
   thesis: string | null;
   biggest_risk: string | null;
   scored_at: string;

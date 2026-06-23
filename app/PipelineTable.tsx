@@ -20,7 +20,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [localStatus, setLocalStatus] = useState<Record<string, string>>({});
-  const [sortBy, setSortBy] = useState<"default" | "composite" | "conviction">("default");
+  const [sortBy, setSortBy] = useState<"default" | "composite" | "confidence">("default");
 
   const displayRows =
     sortBy === "default"
@@ -29,17 +29,17 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
           const primary =
             sortBy === "composite"
               ? [a.score?.composite_score ?? -1, b.score?.composite_score ?? -1]
-              : [a.score?.conviction_score ?? -1, b.score?.conviction_score ?? -1];
+              : [a.score?.confidence_score ?? -1, b.score?.confidence_score ?? -1];
           const diff = primary[1] - primary[0];
           if (diff !== 0) return diff;
           const secondary =
             sortBy === "composite"
-              ? [a.score?.conviction_score ?? -1, b.score?.conviction_score ?? -1]
+              ? [a.score?.confidence_score ?? -1, b.score?.confidence_score ?? -1]
               : [a.score?.composite_score ?? -1, b.score?.composite_score ?? -1];
           return secondary[1] - secondary[0];
         });
 
-  function headerButton(label: string, key: "composite" | "conviction") {
+  function headerButton(label: string, key: "composite" | "confidence") {
     const active = sortBy === key;
     return (
       <button onClick={() => setSortBy(key)} className={active ? "text-signal" : ""}>
@@ -48,8 +48,8 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
     );
   }
 
-  function handleStatusChange(companyId: string, newStatus: string, conviction: number | null | undefined) {
-    if (newStatus === "active_watch" && (conviction ?? 0) < 3) {
+  function handleStatusChange(companyId: string, newStatus: string, confidence: number | null | undefined) {
+    if (newStatus === "active_watch" && (confidence ?? 0) < 3) {
       setLocalStatus((prev) => ({ ...prev, [companyId]: newStatus }));
       setConfirmingId(companyId);
       return;
@@ -78,7 +78,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
             <th className="px-4 py-3">Company</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">{headerButton("Composite", "composite")}</th>
-            <th className="px-4 py-3">{headerButton("Conviction", "conviction")}</th>
+            <th className="px-4 py-3">{headerButton("Confidence", "confidence")}</th>
             <th className="px-4 py-3"></th>
           </tr>
         </thead>
@@ -107,7 +107,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                     <input type="hidden" name="research_status" value={localStatus[c.id] ?? c.research_status} />
                     <select
                       value={localStatus[c.id] ?? c.research_status}
-                      onChange={(e) => handleStatusChange(c.id, e.target.value, s?.conviction_score)}
+                      onChange={(e) => handleStatusChange(c.id, e.target.value, s?.confidence_score)}
                       title={STATUS_DEFINITIONS[c.research_status]}
                       className="rounded border border-line bg-panelhi px-2 py-1 text-xs text-muted hover:border-signal"
                     >
@@ -145,7 +145,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                   {confirmingId === c.id && (
                     <div className="mt-2 rounded bg-signal/10 p-2">
                       <p className="mb-1.5 text-xs text-signal">
-                        Conviction is {s?.conviction_score ?? "—"}/5, below the usual 3/5 guideline for active
+                        Confidence is {s?.confidence_score ?? "—"}/5, below the usual 3/5 guideline for active
                         watch. Not blocked, just confirm.
                       </p>
                       <div className="flex gap-2">
@@ -171,7 +171,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                   <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "—"}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-sm text-[#e7e8ea]">{s?.conviction_score ?? "—"}/5</span>
+                  <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "—"}/5</span>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link
@@ -203,9 +203,9 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                       </div>
                     ))}
                     <div className="mt-2 border-t border-line pt-2">
-                      <span className="font-mono text-sm font-medium text-[#e7e8ea]">{s.conviction_score}/5</span>{" "}
-                      <span className="text-xs text-muted">conviction, holistic judgment on top of the formula</span>
-                      {s.conviction_note && <div className="text-xs text-[#cfd1d5]">{s.conviction_note}</div>}
+                      <span className="font-mono text-sm font-medium text-[#e7e8ea]">{s.confidence_score}/5</span>{" "}
+                      <span className="text-xs text-muted">confidence, how verified and stable the score inputs are</span>
+                      {s.confidence_note && <div className="text-xs text-[#cfd1d5]">{s.confidence_note}</div>}
                       {s.watch_condition && (
                         <div className="mt-1 text-xs text-signal">Watching for: {s.watch_condition}</div>
                       )}

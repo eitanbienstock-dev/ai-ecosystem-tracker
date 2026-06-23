@@ -88,9 +88,9 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] text-muted">conviction</div>
+            <div className="text-[10px] text-muted">confidence</div>
             <div className="font-mono text-lg font-semibold text-[#e7e8ea]">
-              {currentScore?.conviction_score ?? "—"}/5
+              {currentScore?.confidence_score ?? "—"}/5
             </div>
           </div>
           <div className="text-right text-xs text-muted">
@@ -144,11 +144,11 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
               ))}
               <div className="mt-2 border-t border-line pt-2">
                 <span className="font-mono text-sm font-medium text-[#e7e8ea]">
-                  {currentScore.conviction_score}/5
+                  {currentScore.confidence_score}/5
                 </span>{" "}
-                <span className="text-xs text-muted">conviction, holistic judgment on top of the formula</span>
-                {currentScore.conviction_note && (
-                  <div className="text-xs text-[#cfd1d5]">{currentScore.conviction_note}</div>
+                <span className="text-xs text-muted">confidence, how verified and stable the score inputs are</span>
+                {currentScore.confidence_note && (
+                  <div className="text-xs text-[#cfd1d5]">{currentScore.confidence_note}</div>
                 )}
               </div>
               {currentScore.ecosystem_synthesis && (

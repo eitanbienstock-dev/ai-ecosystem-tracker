@@ -132,7 +132,7 @@ export default async function HomePage() {
       <div className="mb-10">
         <div className="mb-3">
           <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Pipeline</h1>
-          <p className="text-xs text-muted">grouped by stage by default, click Composite or Conviction to sort the whole list instead</p>
+          <p className="text-xs text-muted">grouped by stage by default, click Composite or Confidence to sort the whole list instead</p>
         </div>
         {pipeline.length === 0 ? (
           <div className="rounded border border-dashed border-line py-10 text-center">

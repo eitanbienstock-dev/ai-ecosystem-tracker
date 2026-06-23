@@ -9,25 +9,25 @@ type Row = {
   scoredAt: string;
   daysSince: number;
   composite: number | null;
-  conviction: number | null;
+  confidence: number | null;
   priceThen: number | null;
   priceNow: number | null;
   changePct: number | null;
 };
 
 export default function ScorecardTable({ rows }: { rows: Row[] }) {
-  const [sortBy, setSortBy] = useState<"composite" | "conviction">("composite");
+  const [sortBy, setSortBy] = useState<"composite" | "confidence">("composite");
 
   const sorted = [...rows].sort((a, b) => {
-    const primary = sortBy === "composite" ? [a.composite, b.composite] : [a.conviction, b.conviction];
+    const primary = sortBy === "composite" ? [a.composite, b.composite] : [a.confidence, b.confidence];
     const diff = (primary[1] ?? -1) - (primary[0] ?? -1);
     if (diff !== 0) return diff;
     // Tiebreak on the other metric so toggling sort always visibly reorders ties
-    const secondary = sortBy === "composite" ? [a.conviction, b.conviction] : [a.composite, b.composite];
+    const secondary = sortBy === "composite" ? [a.confidence, b.confidence] : [a.composite, b.composite];
     return (secondary[1] ?? -1) - (secondary[0] ?? -1);
   });
 
-  function headerButton(label: string, key: "composite" | "conviction") {
+  function headerButton(label: string, key: "composite" | "confidence") {
     const active = sortBy === key;
     return (
       <button
@@ -47,7 +47,7 @@ export default function ScorecardTable({ rows }: { rows: Row[] }) {
             <th className="px-4 py-3">Company</th>
             <th className="px-4 py-3">Scored</th>
             <th className="px-4 py-3">{headerButton("Composite", "composite")}</th>
-            <th className="px-4 py-3">{headerButton("Conviction", "conviction")}</th>
+            <th className="px-4 py-3">{headerButton("Confidence", "confidence")}</th>
             <th className="px-4 py-3">Price then</th>
             <th className="px-4 py-3">Price now</th>
             <th className="px-4 py-3">Change since</th>
@@ -64,7 +64,7 @@ export default function ScorecardTable({ rows }: { rows: Row[] }) {
                 {r.scoredAt} ({r.daysSince}d ago)
               </td>
               <td className="px-4 py-3 font-mono">{r.composite ?? "—"}</td>
-              <td className="px-4 py-3 font-mono">{r.conviction ?? "—"}/5</td>
+              <td className="px-4 py-3 font-mono">{r.confidence ?? "—"}/5</td>
               <td className="px-4 py-3 font-mono text-muted">
                 {r.priceThen ? `$${r.priceThen.toFixed(2)}` : "not recorded"}
               </td>

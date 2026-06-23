@@ -373,7 +373,7 @@ export default async function CompanyDetailPage({
                 {latestScore.composite_score ?? "—"}
               </span>
               <span className="text-sm text-muted">
-                conviction {latestScore.conviction_score ?? "—"}/5 · scored{" "}
+                confidence {latestScore.confidence_score ?? "—"}/5 · scored{" "}
                 {latestScore.scored_at}
               </span>
             </div>
@@ -408,10 +408,10 @@ export default async function CompanyDetailPage({
                 </div>
               ))}
             </div>
-            {latestScore.conviction_note && (
+            {latestScore.confidence_note && (
               <p className="mt-3 text-sm text-[#cfd1d5]">
-                <span className="font-medium text-[#e7e8ea]">Why conviction is {latestScore.conviction_score}/5: </span>
-                {latestScore.conviction_note}
+                <span className="font-medium text-[#e7e8ea]">Why confidence is {latestScore.confidence_score}/5: </span>
+                {latestScore.confidence_note}
               </p>
             )}
             {latestScore.thesis && (
