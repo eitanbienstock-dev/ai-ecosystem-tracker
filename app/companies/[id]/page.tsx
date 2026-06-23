@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase";
 import { getLiveMarketCap, getLivePrice } from "@/lib/marketData";
 import { STATUS_DEFINITIONS, LEVERAGE_DEFINITIONS, TRAJECTORY_DEFINITIONS } from "@/lib/statusDefinitions";
+import DeleteCompanyButton from "../../DeleteCompanyButton";
+import { resolveCatalyst, markReviewed } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,7 @@ export default async function CompanyDetailPage({
 
   if (!company) notFound();
   const c = company as Company;
+  const today = new Date().toISOString().slice(0, 10);
 
   const liveCap = c.ticker ? await getLiveMarketCap(c.ticker) : null;
   const livePrice = c.ticker ? await getLivePrice(c.ticker) : null;
@@ -133,6 +136,7 @@ export default async function CompanyDetailPage({
           >
             Edit
           </Link>
+          <DeleteCompanyButton companyId={c.id} companyName={c.name} />
         </div>
       </div>
 
@@ -286,21 +290,78 @@ export default async function CompanyDetailPage({
           <p className="text-sm text-muted">No catalysts logged yet.</p>
         ) : (
           <div className="space-y-2">
-            {(catalysts as Catalyst[]).map((cat) => (
-              <div
-                key={cat.id}
-                className="flex items-center justify-between border-b border-line py-2 text-sm last:border-0"
-              >
-                <span className="text-[#cfd1d5]">{cat.description}</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted">{cat.expected_date ?? ""}</span>
-                  <span className="badge bg-panelhi text-muted">{cat.status}</span>
+            {(catalysts as Catalyst[]).map((cat) => {
+              const isOverdue = cat.status === "pending" && cat.expected_date && cat.expected_date <= today;
+              return (
+                <div key={cat.id} className="border-b border-line py-2 text-sm last:border-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#cfd1d5]">{cat.description}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted">{cat.expected_date ?? ""}</span>
+                      <span className="badge bg-panelhi text-muted">{cat.status}</span>
+                    </div>
+                  </div>
+                  {cat.status === "pending" && (
+                    <div className="mt-1.5 flex items-center justify-between">
+                      {isOverdue ? (
+                        <p className="text-xs text-signal">
+                          Expected date has passed while this is still pending. Confirm what actually
+                          happened:
+                        </p>
+                      ) : (
+                        <span />
+                      )}
+                      <div className="flex gap-2">
+                        <form action={resolveCatalyst.bind(null, cat.id)}>
+                          <input type="hidden" name="status" value="realized" />
+                          <button
+                            type="submit"
+                            className="rounded border border-line px-2 py-0.5 text-xs hover:border-rise hover:text-rise"
+                          >
+                            Mark realized
+                          </button>
+                        </form>
+                        <form action={resolveCatalyst.bind(null, cat.id)}>
+                          <input type="hidden" name="status" value="missed" />
+                          <button
+                            type="submit"
+                            className="rounded border border-line px-2 py-0.5 text-xs hover:border-fall hover:text-fall"
+                          >
+                            Mark missed
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Section>
+
+      {c.next_review_date && (
+        <Section title="Review reminder" className="mt-5">
+          {c.next_review_date <= today ? (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-signal">
+                A review was scheduled for {c.next_review_date} and that date has arrived. This is a manual
+                reminder you set, not tied to any specific catalyst, marking it reviewed clears it.
+              </p>
+              <form action={markReviewed.bind(null, c.id)}>
+                <button
+                  type="submit"
+                  className="ml-3 shrink-0 rounded border border-line px-3 py-1 text-xs hover:border-signal"
+                >
+                  Mark reviewed
+                </button>
+              </form>
+            </div>
+          ) : (
+            <p className="text-sm text-muted">Next review scheduled for {c.next_review_date}.</p>
+          )}
+        </Section>
+      )}
 
       <Section title="Latest score" className="mt-5">
         {!latestScore ? (

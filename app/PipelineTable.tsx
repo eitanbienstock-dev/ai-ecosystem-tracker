@@ -20,6 +20,33 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [localStatus, setLocalStatus] = useState<Record<string, string>>({});
+  const [sortBy, setSortBy] = useState<"default" | "composite" | "conviction">("default");
+
+  const displayRows =
+    sortBy === "default"
+      ? rows
+      : [...rows].sort((a, b) => {
+          const primary =
+            sortBy === "composite"
+              ? [a.score?.composite_score ?? -1, b.score?.composite_score ?? -1]
+              : [a.score?.conviction_score ?? -1, b.score?.conviction_score ?? -1];
+          const diff = primary[1] - primary[0];
+          if (diff !== 0) return diff;
+          const secondary =
+            sortBy === "composite"
+              ? [a.score?.conviction_score ?? -1, b.score?.conviction_score ?? -1]
+              : [a.score?.composite_score ?? -1, b.score?.composite_score ?? -1];
+          return secondary[1] - secondary[0];
+        });
+
+  function headerButton(label: string, key: "composite" | "conviction") {
+    const active = sortBy === key;
+    return (
+      <button onClick={() => setSortBy(key)} className={active ? "text-signal" : ""}>
+        {label} {active && "↓"}
+      </button>
+    );
+  }
 
   function handleStatusChange(companyId: string, newStatus: string, conviction: number | null | undefined) {
     if (newStatus === "active_watch" && (conviction ?? 0) < 3) {
@@ -50,13 +77,13 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
           <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3">Company</th>
             <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3">Composite</th>
-            <th className="px-4 py-3">Conviction</th>
+            <th className="px-4 py-3">{headerButton("Composite", "composite")}</th>
+            <th className="px-4 py-3">{headerButton("Conviction", "conviction")}</th>
             <th className="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ company: c, score: s, signal }) => (
+          {displayRows.map(({ company: c, score: s, signal }) => (
             <>
               <tr key={c.id} className="border-b border-line bg-panel/40 hover:bg-panelhi">
                 <td className="px-4 py-3">

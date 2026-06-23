@@ -171,6 +171,44 @@ export async function updateResearchStatus(companyId: string, formData: FormData
   revalidatePath(`/companies/${companyId}`);
 }
 
+export async function resolveCatalyst(catalystId: string, formData: FormData) {
+  const status = String(formData.get("status")); // "realized" or "missed"
+  const today = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase
+    .from("catalysts")
+    .update({ status, resolved_at: today })
+    .eq("id", catalystId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+}
+
+export async function markReviewed(companyId: string, formData: FormData) {
+  const nextDate = String(formData.get("next_review_date") || "") || null;
+  const today = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase
+    .from("companies")
+    .update({ next_review_date: nextDate, last_reviewed_at: today, updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+  revalidatePath(`/companies/${companyId}`);
+}
+
+export async function deleteCompany(companyId: string, _formData: FormData) {
+  // Delete child rows explicitly rather than relying on cascade behavior,
+  // safe either way: a no-op if cascade already exists, required if it doesn't.
+  await supabase.from("decision_log").delete().eq("company_id", companyId);
+  await supabase.from("catalysts").delete().eq("company_id", companyId);
+  await supabase.from("partnerships").delete().eq("company_id", companyId);
+  await supabase.from("scores").delete().eq("company_id", companyId);
+
+  const { error } = await supabase.from("companies").delete().eq("id", companyId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  redirect("/");
+}
+
 export async function reevaluateCompany(companyId: string, _formData: FormData) {
   const today = new Date().toISOString().slice(0, 10);
   const { error } = await supabase
