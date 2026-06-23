@@ -19,7 +19,7 @@ export default async function HomePage() {
 
   const list = (companies ?? []) as Company[];
   const invested = list.filter((c) => c.research_status === "invested");
-  const pipeline = list.filter((c) => c.research_status === "pipeline");
+  const pipeline = list.filter((c) => c.research_status === "pipeline" || c.research_status === "invested");
   const archive = list.filter((c) => c.research_status === "archived");
 
   const { data: scoreRows } = await supabase.from("scores").select("*").order("scored_at", { ascending: true });
@@ -124,7 +124,7 @@ export default async function HomePage() {
       <div className="mb-10">
         <div className="mb-3">
           <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Watched Pipeline</h1>
-          <p className="text-xs text-muted">manually ranked, use the arrows to move a company up or down, or click Composite or Confidence to preview a different order</p>
+          <p className="text-xs text-muted">includes current holdings alongside candidates, manually ranked, use the arrows to move a company up or down, or click Composite or Confidence to preview a different order</p>
         </div>
         {pipeline.length === 0 ? (
           <div className="rounded border border-dashed border-line py-10 text-center">

@@ -22,7 +22,7 @@ export async function createCompany(formData: FormData) {
     const { data: maxRow } = await supabase
       .from("companies")
       .select("pipeline_order")
-      .eq("research_status", "pipeline")
+      .in("research_status", ["pipeline", "invested"])
       .order("pipeline_order", { ascending: false })
       .limit(1)
       .single();
@@ -75,7 +75,6 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
     .from("companies")
     .update({
       research_status: "invested",
-      pipeline_order: null,
       entry_date: today,
       entry_price: entryPrice,
       shares_held: shares,
@@ -185,7 +184,7 @@ export async function movePipelineRank(companyId: string, direction: "up" | "dow
   const { data: rows, error: fetchError } = await supabase
     .from("companies")
     .select("id, pipeline_order")
-    .eq("research_status", "pipeline")
+    .in("research_status", ["pipeline", "invested"])
     .order("pipeline_order", { ascending: true });
   if (fetchError) throw new Error(fetchError.message);
 
@@ -236,7 +235,7 @@ export async function restoreToPipeline(companyId: string, _formData: FormData) 
   const { data: maxRow } = await supabase
     .from("companies")
     .select("pipeline_order")
-    .eq("research_status", "pipeline")
+    .in("research_status", ["pipeline", "invested"])
     .order("pipeline_order", { ascending: false })
     .limit(1)
     .single();
@@ -311,7 +310,7 @@ export async function updateCompany(id: string, formData: FormData) {
     const { data: maxRow } = await supabase
       .from("companies")
       .select("pipeline_order")
-      .eq("research_status", "pipeline")
+      .in("research_status", ["pipeline", "invested"])
       .order("pipeline_order", { ascending: false })
       .limit(1)
       .single();
@@ -323,9 +322,10 @@ export async function updateCompany(id: string, formData: FormData) {
       throw new Error("An archive reason is required when archiving a company.");
     }
     archiveReason = archiveReasonInput || archiveReason;
-  } else if (newStatus !== "pipeline") {
-    pipelineOrder = null;
   }
+  // newStatus === "invested" falls through here deliberately: pipelineOrder
+  // and archiveReason both keep their current values, since an invested
+  // company stays ranked in the combined pipeline/invested list.
 
   const payload = {
     name: String(formData.get("name") || ""),

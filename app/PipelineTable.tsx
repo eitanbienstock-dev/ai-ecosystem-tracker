@@ -139,13 +139,24 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                 </td>
                 <td className="px-4 py-3 relative">
                   <div className="flex justify-end gap-2">
-                    <Link
-                      href={`/companies/${c.id}/promote`}
-                      className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
-                    >
-                      Promote to invested
-                    </Link>
-                    <ArchiveControl companyId={c.id} />
+                    {c.research_status === "invested" ? (
+                      <span
+                        className="badge bg-rise/15 text-rise"
+                        title="Already invested, use Trim or Exit on the portfolio card above to change this position"
+                      >
+                        invested
+                      </span>
+                    ) : (
+                      <>
+                        <Link
+                          href={`/companies/${c.id}/promote`}
+                          className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
+                        >
+                          Promote to invested
+                        </Link>
+                        <ArchiveControl companyId={c.id} />
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
