@@ -27,13 +27,12 @@ function pearson(xs: number[], ys: number[]): number | null {
 }
 
 export default async function ScorecardPage() {
-  const { data: scores } = await supabase.from("scores").select("*").order("scored_at", { ascending: false });
+  const { data: scores } = await supabase.from("scores").select("*").order("scored_at", { ascending: true });
   const { data: companies } = await supabase.from("companies").select("*");
 
   const companyById = new Map<string, Company>();
   for (const c of (companies ?? []) as Company[]) companyById.set(c.id, c);
 
-  // Dedupe live price fetches per ticker
   const tickers = Array.from(new Set((companies ?? []).map((c: any) => c.ticker).filter(Boolean)));
   const liveByTicker = new Map<string, number>();
   await Promise.all(
@@ -44,7 +43,34 @@ export default async function ScorecardPage() {
   );
 
   const allScores = (scores ?? []) as Score[];
-  const rows = allScores.map((s) => {
+
+  // Full history, used only for the accuracy metric, not displayed as rows
+  const graded = allScores
+    .map((s) => {
+      const company = companyById.get(s.company_id);
+      const livePrice = company?.ticker ? liveByTicker.get(company.ticker) ?? null : null;
+      const priceThen = s.price_at_scoring ? Number(s.price_at_scoring) : null;
+      const changePct = priceThen && livePrice ? ((livePrice - priceThen) / priceThen) * 100 : null;
+      const daysSince = Math.round((Date.now() - new Date(s.scored_at).getTime()) / 86_400_000);
+      return { conviction: s.conviction_score, composite: s.composite_score, changePct, daysSince };
+    })
+    .filter((r) => r.changePct !== null);
+
+  const n = graded.length;
+  const avgDays = n > 0 ? graded.reduce((a, r) => a + r.daysSince, 0) / n : 0;
+  const meetsThreshold = n >= MIN_N && avgDays >= MIN_AVG_DAYS;
+  const convictionCorr = meetsThreshold
+    ? pearson(graded.map((r) => r.conviction ?? 0), graded.map((r) => r.changePct as number))
+    : null;
+  const compositeCorr = meetsThreshold
+    ? pearson(graded.map((r) => r.composite ?? 0), graded.map((r) => r.changePct as number))
+    : null;
+
+  // Display rows: one per company, latest score only
+  const latestByCompany = new Map<string, Score>();
+  for (const s of allScores) latestByCompany.set(s.company_id, s); // ascending order, last write wins
+
+  const rows = Array.from(latestByCompany.values()).map((s) => {
     const company = companyById.get(s.company_id);
     const livePrice = company?.ticker ? liveByTicker.get(company.ticker) ?? null : null;
     const priceThen = s.price_at_scoring ? Number(s.price_at_scoring) : null;
@@ -64,30 +90,13 @@ export default async function ScorecardPage() {
     };
   });
 
-  // Accuracy metric: correlation between conviction (and composite) and forward
-  // return, across every score that has both a starting price and a current
-  // price. Gated behind minimum sample size and minimum average days tracked,
-  // a correlation computed on same-day data is not a measurement.
-  const usable = rows.filter((r) => r.changePct !== null);
-  const n = usable.length;
-  const avgDays = n > 0 ? usable.reduce((a, r) => a + r.daysSince, 0) / n : 0;
-  const meetsThreshold = n >= MIN_N && avgDays >= MIN_AVG_DAYS;
-
-  const convictionCorr = meetsThreshold
-    ? pearson(usable.map((r) => r.conviction ?? 0), usable.map((r) => r.changePct as number))
-    : null;
-  const compositeCorr = meetsThreshold
-    ? pearson(usable.map((r) => r.composite ?? 0), usable.map((r) => r.changePct as number))
-    : null;
-
   return (
     <div>
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Scorecard</h1>
         <p className="max-w-2xl text-sm text-muted">
-          Every score graded against what the stock actually did since. This is the feedback loop the rest of
-          the system was missing, conviction and composite score are opinions until something measures
-          whether they were right.
+          One row per company, its most recent score, the price when that score was made, and the price now.
+          Click a column header to change the sort order.
         </p>
       </div>
 
@@ -110,24 +119,16 @@ export default async function ScorecardPage() {
           </div>
         ) : (
           <p className="text-sm text-[#cfd1d5]">
-            Not enough data to mean anything yet: {n} of {MIN_N} graded scores, averaging{" "}
-            {avgDays.toFixed(1)} of {MIN_AVG_DAYS} days tracked. A correlation computed below this threshold
-            is statistical noise, not a measurement, so no number is shown until both bars are cleared.{" "}
-            {n > 0 && avgDays < 3 && (
-              <span>
-                Worth knowing: every score was just re-scored today, which resets this clock to zero in
-                exchange for better-calibrated data. That trade was made deliberately, not accidentally.
-              </span>
-            )}
+            Accumulating data: {n} of {MIN_N} graded scores, averaging {avgDays.toFixed(1)} of {MIN_AVG_DAYS}{" "}
+            days tracked. A number appears here once both thresholds are met.
           </p>
         )}
         <p className="mt-3 text-[11px] text-muted">
-          What this measures: correlation between conviction (or composite score) and the stock&apos;s
-          forward return since that score was made, across every score ever recorded, not just the latest
-          per company. A positive number means higher-conviction names have tended to outperform
-          lower-conviction names since being scored, the same concept funds call an information coefficient.
-          It does not mean conviction predicts direction in an absolute sense, conviction is a portfolio-fit
-          judgment, not a price forecast.
+          Correlation between conviction, and separately composite score, and each stock&apos;s return since
+          it was scored, across every score on record. A positive number means higher-conviction names have
+          tended to outperform lower-conviction names since being scored. Conviction reflects portfolio fit,
+          not a price-direction forecast, so this measures whether the ranking itself has value, not whether
+          any single call was right.
         </p>
       </div>
 

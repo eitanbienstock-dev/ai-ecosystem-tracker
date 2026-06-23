@@ -104,10 +104,10 @@ export default async function DataQualityPage() {
       <div className="mb-8">
         <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Data quality</h1>
         <p className="text-sm text-muted">
-          Runs the checks from the manual audit automatically. Two issue classes are enforced as hard database
-          constraints now and cannot recur silently: a cash-burning company can never carry a P/E valuation, and
-          a catalyst can never be marked realized without a resolution date. Everything below is the remaining
-          class, real but legitimately ambiguous gaps that need a human glance, not a database rule.
+          Automated checks for data consistency issues. Two categories are enforced as database constraints
+          and cannot occur at all: a cash-burning company can never carry a P/E valuation, and a catalyst can
+          never be marked realized without a resolution date. Everything listed below is a different
+          category, real but legitimately ambiguous gaps that need a human glance rather than a fixed rule.
         </p>
       </div>
 

@@ -35,8 +35,8 @@ export default async function ResearchDigestPage() {
       <div className="mb-8">
         <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Research digest</h1>
         <p className="text-sm text-muted">
-          Findings from periodic scans of major bank and institutional AI research. Run on-request for
-          now, this is where the findings live regardless of how the scan eventually runs.
+          Findings from periodic scans of major bank and institutional AI research. Scans run on request,
+          not on a fixed schedule.
         </p>
       </div>
 
