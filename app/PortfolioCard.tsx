@@ -30,7 +30,9 @@ const dimWeights = [25, 20, 15, 15, 15, 10];
 
 export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
   const [open, setOpen] = useState(false);
-  const [showCaution, setShowCaution] = useState<null | "trimmed" | "exited">(null);
+  const [showCaution, setShowCaution] = useState<null | "trimmed">(null);
+  const [exitPanelOpen, setExitPanelOpen] = useState(false);
+  const [exitReason, setExitReason] = useState("");
 
   const { company, currentScore, entryScoreVal, targetWeight, effectiveTargetWeight, currentWeight, daysHeld, overdueCatalystCount, log } = data;
 
@@ -50,21 +52,30 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
       ]
     : [];
 
-  function attemptAction(type: "trimmed" | "exited") {
+  function attemptTrim() {
     if (underYear) {
-      setShowCaution(type);
+      setShowCaution("trimmed");
     } else {
       const form = document.getElementById(`txn-form-${company.id}`) as HTMLFormElement;
-      (form.elements.namedItem("entry_type") as HTMLInputElement).value = type;
+      (form.elements.namedItem("entry_type") as HTMLInputElement).value = "trimmed";
       form.requestSubmit();
     }
   }
 
-  function proceedAnyway() {
-    if (!showCaution) return;
+  function proceedTrimAnyway() {
     const form = document.getElementById(`txn-form-${company.id}`) as HTMLFormElement;
-    (form.elements.namedItem("entry_type") as HTMLInputElement).value = showCaution;
+    (form.elements.namedItem("entry_type") as HTMLInputElement).value = "trimmed";
     setShowCaution(null);
+    form.requestSubmit();
+  }
+
+  function confirmExit() {
+    if (!exitReason.trim()) return;
+    const form = document.getElementById(`txn-form-${company.id}`) as HTMLFormElement;
+    (form.elements.namedItem("entry_type") as HTMLInputElement).value = "exited";
+    (form.elements.namedItem("archive_reason") as HTMLInputElement).value = exitReason;
+    setExitPanelOpen(false);
+    setExitReason("");
     form.requestSubmit();
   }
 
@@ -209,19 +220,20 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
 
           <form id={`txn-form-${company.id}`} action={recordTransaction.bind(null, company.id)} className="hidden">
             <input type="hidden" name="entry_type" />
+            <input type="hidden" name="archive_reason" />
             <input type="hidden" name="price" value={company.entry_price ?? 0} />
             <input type="hidden" name="shares" value={company.shares_held ?? 0} />
           </form>
 
           <div className="flex gap-2">
             <button
-              onClick={() => attemptAction("trimmed")}
+              onClick={attemptTrim}
               className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
             >
               Trim
             </button>
             <button
-              onClick={() => attemptAction("exited")}
+              onClick={() => setExitPanelOpen(true)}
               className="rounded border border-line px-3 py-1 text-xs hover:border-fall"
             >
               Exit
@@ -242,7 +254,7 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
               </p>
               <div className="flex gap-2">
                 <button
-                  onClick={proceedAnyway}
+                  onClick={proceedTrimAnyway}
                   className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
                 >
                   Proceed anyway
@@ -250,6 +262,44 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
                 <button
                   onClick={() => setShowCaution(null)}
                   className="rounded border border-line px-3 py-1 text-xs hover:border-fall"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {exitPanelOpen && (
+            <div className="mt-3 rounded bg-fall/10 p-3">
+              {underYear && (
+                <p className="mb-2 text-xs text-signal">
+                  Held {Math.round((daysHeld ?? 0) / 30)} months, below the preferred 12 month minimum. Not
+                  blocked, just worth confirming.
+                </p>
+              )}
+              <p className="mb-1.5 text-xs font-medium text-[#e7e8ea]">Why is this being exited?</p>
+              <textarea
+                autoFocus
+                value={exitReason}
+                onChange={(e) => setExitReason(e.target.value)}
+                rows={3}
+                className="input mb-2 w-full text-xs"
+                placeholder="Required, shows up on the archive list"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={confirmExit}
+                  disabled={!exitReason.trim()}
+                  className="rounded border border-fall bg-fall/20 px-3 py-1 text-xs text-fall hover:bg-fall/30 disabled:opacity-40"
+                >
+                  Confirm exit
+                </button>
+                <button
+                  onClick={() => {
+                    setExitPanelOpen(false);
+                    setExitReason("");
+                  }}
+                  className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
                 >
                   Cancel
                 </button>

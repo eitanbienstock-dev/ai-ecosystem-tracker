@@ -154,8 +154,11 @@ export async function recordTransaction(companyId: string, formData: FormData) {
     updated_at: new Date().toISOString(),
   };
   if (type === "exited") {
+    const exitReason = String(formData.get("archive_reason") || "").trim();
+    if (!exitReason) throw new Error("An archive reason is required when exiting a position.");
     updatePayload.research_status = "archived";
     updatePayload.pipeline_order = null;
+    updatePayload.archive_reason = exitReason;
     updatePayload.exit_date = today;
     updatePayload.exit_price = price;
   }
