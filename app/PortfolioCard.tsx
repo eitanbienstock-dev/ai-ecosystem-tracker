@@ -19,7 +19,7 @@ type PortfolioCardData = {
 };
 
 function fmtMarketCap(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "not recorded";
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
   return `$${value}`;
@@ -92,17 +92,17 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
           <div className="text-right">
             <div className="text-[10px] text-muted">composite</div>
             <div className="font-mono text-lg font-semibold text-[#e7e8ea]">
-              {currentScore?.composite_score ?? "—"}
+              {currentScore?.composite_score ?? "not scored"}
             </div>
           </div>
           <div className="text-right">
             <div className="text-[10px] text-muted">confidence</div>
             <div className="font-mono text-lg font-semibold text-[#e7e8ea]">
-              {currentScore?.confidence_score ?? "—"}/5
+              {currentScore?.confidence_score ?? "not graded"}/5
             </div>
           </div>
           <div className="text-right text-xs text-muted">
-            held {daysHeld !== null ? Math.round(daysHeld / 30) : "—"}mo
+            held {daysHeld !== null ? `${Math.round(daysHeld / 30)}mo` : "entry date not recorded"}
           </div>
         </div>
       </div>
@@ -120,7 +120,7 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
       <p className={`mt-1 text-xs ${weightFlagged ? "text-signal" : "text-muted"}`}>
         current {Math.round(currentWeight)}% &middot; target {Math.round(effectiveTargetWeight)}% &middot; drift{" "}
         {drift > 0 ? "+" : ""}
-        {Math.round(drift)}pts{weightFlagged ? " — flagged" : ""}
+        {Math.round(drift)}pts{weightFlagged ? " · flagged" : ""}
       </p>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -143,7 +143,7 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
               <p className="mb-2 text-xs font-medium text-[#e7e8ea]">Composite score breakdown</p>
               {dims.map((d, i) => (
                 <div key={i} className="mb-1.5">
-                  <span className="font-mono text-sm font-medium text-[#e7e8ea]">{d.v ?? "—"}</span>{" "}
+                  <span className="font-mono text-sm font-medium text-[#e7e8ea]">{d.v ?? "not scored"}</span>{" "}
                   <span className="text-xs text-muted">
                     {dimLabels[i]} ({dimWeights[i]}% weight)
                   </span>
@@ -174,14 +174,14 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
 
           <p className="mb-2 text-xs text-muted">
             Entered {formatDate(company.entry_date)} at ${company.entry_price?.toFixed(2)} &middot; entry score{" "}
-            {entryScoreVal?.composite_score ?? "—"} &middot; last reviewed {company.last_reviewed_at ? formatDate(company.last_reviewed_at) : "never"}
+            {entryScoreVal?.composite_score ?? "not scored"} &middot; last reviewed {company.last_reviewed_at ? formatDate(company.last_reviewed_at) : "never"}
           </p>
 
           <div className="mb-3 space-y-1">
             {log.length === 0 && <p className="text-xs text-muted">No decision log entries yet.</p>}
             {log.map((l) => (
               <div key={l.id} className="text-xs">
-                <span className="font-mono text-muted">{formatDate(l.entry_date)}</span> — {l.entry_type}
+                <span className="font-mono text-muted">{formatDate(l.entry_date)}</span> · {l.entry_type}
                 {l.note ? `: ${l.note}` : ""}
               </div>
             ))}

@@ -15,7 +15,7 @@ export const LEVERAGE_DEFINITIONS: Record<string, string> = {
     "Real switching costs exist. Once embedded, a customer or partner would find it expensive or slow to move to a competitor.",
   commoditized:
     "Limited switching costs. A customer or partner could move to a competitor without much friction.",
-  unclear:
+  undetermined:
     "Genuine evidence on both sides, real switching-cost signals alongside real displacement risk, not yet resolved either way.",
 };
 

@@ -53,10 +53,10 @@ export default function ArchiveSection({ rows }: { rows: Row[] }) {
                     </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "—"}</span>
+                      <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "not scored"}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "—"}/5</span>
+                      <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "not graded"}/5</span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted">
                       {c.exit_date

@@ -359,3 +359,22 @@ export async function updateCompany(id: string, formData: FormData) {
   revalidatePath(`/companies/${id}`);
   redirect(`/companies/${id}`);
 }
+
+export async function dismissDigestFlag(companyId: string, digestId: string, _formData: FormData) {
+  const { data: current } = await supabase
+    .from("companies")
+    .select("pending_digest_flags")
+    .eq("id", companyId)
+    .single();
+
+  const remaining = (current?.pending_digest_flags ?? []).filter((id: string) => id !== digestId);
+
+  const { error } = await supabase
+    .from("companies")
+    .update({ pending_digest_flags: remaining })
+    .eq("id", companyId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  revalidatePath(`/companies/${companyId}`);
+}

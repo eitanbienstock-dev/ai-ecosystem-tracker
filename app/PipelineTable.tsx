@@ -132,10 +132,10 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "—"}</span>
+                  <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "not scored"}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "—"}/5</span>
+                  <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "not graded"}/5</span>
                 </td>
                 <td className="px-4 py-3 relative">
                   <div className="flex justify-end gap-2">
@@ -163,7 +163,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
               {openId === c.id && s && (
                 <tr key={`${c.id}-rationale`} className="border-b border-line bg-panelhi">
                   <td colSpan={5} className="px-4 py-3">
-                    <p className="mb-2 text-xs font-medium text-[#e7e8ea]">{c.name} — composite score breakdown</p>
+                    <p className="mb-2 text-xs font-medium text-[#e7e8ea]">composite score breakdown for {c.name}</p>
                     {[
                       [s.ecosystem_position_score, s.ecosystem_position_note],
                       [s.financial_quality_score, s.financial_quality_note],
@@ -173,7 +173,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                       [s.valuation_score, s.valuation_note],
                     ].map(([v, n], di) => (
                       <div key={di} className="mb-1.5">
-                        <span className="font-mono text-sm font-medium text-[#e7e8ea]">{v ?? "—"}</span>{" "}
+                        <span className="font-mono text-sm font-medium text-[#e7e8ea]">{v ?? "not scored"}</span>{" "}
                         <span className="text-xs text-muted">
                           {dimLabels[di]} ({dimWeights[di]}% weight)
                         </span>

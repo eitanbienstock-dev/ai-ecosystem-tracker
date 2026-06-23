@@ -27,7 +27,6 @@ export type Company = {
   key_people: { name: string; role: string }[] | null;
   revenue_growth_pct: number | null;
   gross_margin_pct: number | null;
-  ai_revenue_mix_pct: number | null;
   cash_flow_status: string | null;
   valuation_metric: string | null;
   valuation_multiple: number | null;

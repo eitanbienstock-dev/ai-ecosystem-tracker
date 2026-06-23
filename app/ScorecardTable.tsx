@@ -64,12 +64,12 @@ export default function ScorecardTable({ rows }: { rows: Row[] }) {
               <td className="px-4 py-3 text-xs text-muted">
                 {formatDate(r.scoredAt)} ({r.daysSince}d ago)
               </td>
-              <td className="px-4 py-3 font-mono">{r.composite ?? "—"}</td>
-              <td className="px-4 py-3 font-mono">{r.confidence ?? "—"}/5</td>
+              <td className="px-4 py-3 font-mono">{r.composite ?? "not scored"}</td>
+              <td className="px-4 py-3 font-mono">{r.confidence ?? "not graded"}/5</td>
               <td className="px-4 py-3 font-mono text-muted">
                 {r.priceThen ? `$${r.priceThen.toFixed(2)}` : "not recorded"}
               </td>
-              <td className="px-4 py-3 font-mono text-muted">{r.priceNow ? `$${r.priceNow.toFixed(2)}` : "—"}</td>
+              <td className="px-4 py-3 font-mono text-muted">{r.priceNow ? `$${r.priceNow.toFixed(2)}` : "not available"}</td>
               <td className="px-4 py-3">
                 {r.changePct !== null ? (
                   <span className={r.changePct >= 0 ? "text-rise" : "text-fall"}>
@@ -77,7 +77,7 @@ export default function ScorecardTable({ rows }: { rows: Row[] }) {
                     {r.changePct.toFixed(1)}%
                   </span>
                 ) : (
-                  <span className="text-muted">—</span>
+                  <span className="text-muted">no live price</span>
                 )}
               </td>
             </tr>

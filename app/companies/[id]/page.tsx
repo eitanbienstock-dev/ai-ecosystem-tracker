@@ -4,17 +4,17 @@ import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase"
 import { getLiveMarketCap, getLivePrice } from "@/lib/marketData";
 import { STATUS_DEFINITIONS, LEVERAGE_DEFINITIONS, TRAJECTORY_DEFINITIONS } from "@/lib/statusDefinitions";
 import DeleteCompanyButton from "../../DeleteCompanyButton";
-import { resolveCatalyst, markReviewed } from "@/lib/actions";
+import { resolveCatalyst, markReviewed, dismissDigestFlag } from "@/lib/actions";
 import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 function fmtPct(v: number | null) {
-  return v === null ? "—" : `${v}%`;
+  return v === null ? "not disclosed" : `${v}%`;
 }
 
 function fmtMarketCap(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "not recorded";
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
   return `$${value}`;
@@ -23,8 +23,8 @@ function fmtMarketCap(value: number | null) {
 function trendArrow(trend: string | null) {
   if (trend === "rising") return <span className="text-rise">▲ rising</span>;
   if (trend === "falling") return <span className="text-fall">▼ falling</span>;
-  if (trend === "stable") return <span className="text-muted">— stable</span>;
-  return <span className="text-muted">—</span>;
+  if (trend === "stable") return <span className="text-muted">stable</span>;
+  return <span className="text-muted">no trend data</span>;
 }
 
 export default async function CompanyDetailPage({
@@ -167,18 +167,31 @@ export default async function CompanyDetailPage({
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-signal">
             Research digest may require an update here
           </p>
+          <div className="space-y-1.5">
           {(openDigestEntries ?? []).map((d) => (
-            <p key={d.id} className="text-sm text-[#cfd1d5]">
-              {d.report_url ? (
-                <a href={d.report_url} target="_blank" rel="noopener noreferrer" className="text-signal hover:underline">
-                  {d.report_title}
-                </a>
-              ) : (
-                d.report_title
-              )}{" "}
-              <span className="text-xs text-muted">scanned {formatDate(d.scanned_at)}</span>
-            </p>
+            <div key={d.id} className="flex items-center justify-between gap-3">
+              <p className="text-sm text-[#cfd1d5]">
+                {d.report_url ? (
+                  <a href={d.report_url} target="_blank" rel="noopener noreferrer" className="text-signal hover:underline">
+                    {d.report_title}
+                  </a>
+                ) : (
+                  d.report_title
+                )}{" "}
+                <span className="text-xs text-muted">scanned {formatDate(d.scanned_at)}</span>
+              </p>
+              <form action={dismissDigestFlag.bind(null, c.id, d.id)}>
+                <button
+                  type="submit"
+                  className="shrink-0 rounded border border-line px-2 py-1 text-xs text-muted hover:border-signal hover:text-signal"
+                  title="Marks this finding as addressed for this company and removes the flag"
+                >
+                  Dismiss
+                </button>
+              </form>
+            </div>
           ))}
+          </div>
         </div>
       )}
 
@@ -189,14 +202,13 @@ export default async function CompanyDetailPage({
           </p>
           <Row label="Revenue growth" value={fmtPct(c.revenue_growth_pct)} />
           <Row label="Gross margin" value={fmtPct(c.gross_margin_pct)} />
-          <Row label="AI revenue mix" value={fmtPct(c.ai_revenue_mix_pct)} />
-          <Row label="Cash flow" value={c.cash_flow_status ?? "—"} />
+          <Row label="Cash flow" value={c.cash_flow_status ?? "not recorded"} />
           <Row
             label="Valuation"
             value={
               c.valuation_multiple
                 ? `${c.valuation_multiple}x ${c.valuation_metric ?? ""}`
-                : "—"
+                : "not recorded"
             }
           />
         </Section>
@@ -220,11 +232,18 @@ export default async function CompanyDetailPage({
               </>
             }
           />
-          <Row label="AI claims credibility" value={c.ai_claims_credibility ?? "—"} />
+          <Row label="AI claims credibility" value={c.ai_claims_credibility ?? "not assessed"} />
           <Row
             label="Comp tied to AI KPIs"
-            value={c.compensation_tied_to_ai === null ? "—" : c.compensation_tied_to_ai ? "Yes" : "No"}
+            value={c.compensation_tied_to_ai === null ? "not disclosed" : c.compensation_tied_to_ai ? "Yes" : "No"}
           />
+          {c.compensation_tied_to_ai === null && (
+            <p className="mb-2 text-[11px] text-muted">
+              Proxy statements rarely break out AI-specific KPI linkage as its own disclosed metric, it is
+              typically folded into broader innovation or strategic performance goals, which is why this is
+              hard to confirm for most companies rather than a gap specific to this one.
+            </p>
+          )}
           {c.capital_allocation_assessment && (
             <p className="mt-2 text-xs text-muted">{c.capital_allocation_assessment}</p>
           )}
@@ -250,7 +269,7 @@ export default async function CompanyDetailPage({
                 Leverage
               </span>
             }
-            value={c.ecosystem_leverage_direction?.replace("_", " ") ?? "—"}
+            value={c.ecosystem_leverage_direction?.replace("_", " ") ?? "not assessed"}
           />
           {c.ecosystem_leverage_direction && (
             <p className="mb-2 text-[11px] text-muted">{LEVERAGE_DEFINITIONS[c.ecosystem_leverage_direction]}</p>
@@ -261,7 +280,7 @@ export default async function CompanyDetailPage({
                 Trajectory
               </span>
             }
-            value={c.ecosystem_trajectory ?? "—"}
+            value={c.ecosystem_trajectory ?? "not assessed"}
           />
           {c.ecosystem_trajectory && (
             <p className="mb-2 text-[11px] text-muted">{TRAJECTORY_DEFINITIONS[c.ecosystem_trajectory]}</p>
@@ -397,10 +416,10 @@ export default async function CompanyDetailPage({
           <div>
             <div className="mb-3 flex items-center gap-4">
               <span className="font-mono text-3xl font-bold text-signal">
-                {latestScore.composite_score ?? "—"}
+                {latestScore.composite_score ?? "not yet scored"}
               </span>
               <span className="text-sm text-muted">
-                confidence {latestScore.confidence_score ?? "—"}/5 · scored{" "}
+                confidence {latestScore.confidence_score ?? "not graded"}/5 · scored{" "}
                 {formatDate(latestScore.scored_at)}
               </span>
             </div>
@@ -429,7 +448,7 @@ export default async function CompanyDetailPage({
                 ["Valuation", latestScore.valuation_score, latestScore.valuation_note],
               ].map(([label, val, note]) => (
                 <div key={label as string}>
-                  <span className="font-mono font-medium text-[#e7e8ea]">{(val as number) ?? "—"}</span>{" "}
+                  <span className="font-mono font-medium text-[#e7e8ea]">{(val as number) ?? "not scored"}</span>{" "}
                   <span className="text-muted">{label}</span>
                   {note ? <div className="mt-0.5 text-[#cfd1d5]">{note as string}</div> : null}
                 </div>

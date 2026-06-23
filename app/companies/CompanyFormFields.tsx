@@ -107,7 +107,7 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
         <p className="mt-1 text-xs text-muted">
           {company?.research_status === "invested"
             ? "Use Trim or Exit on the portfolio card to change an invested position, not this form."
-            : `${RESEARCH_STATUSES.map((s) => `${s}: ${STATUS_DEFINITIONS[s]}`).join(" — ")} Promoting to invested happens through the dedicated promote flow, not this form, so it captures entry price and share count.`}
+            : `${RESEARCH_STATUSES.map((s) => `${s}: ${STATUS_DEFINITIONS[s]}`).join(" · ")} Promoting to invested happens through the dedicated promote flow, not this form, so it captures entry price and share count.`}
         </p>
       </Field>
 

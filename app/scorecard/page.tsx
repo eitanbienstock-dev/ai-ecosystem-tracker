@@ -107,13 +107,13 @@ export default async function ScorecardPage() {
             <div>
               <p className="text-[10px] text-muted">Confidence ↔ forward return</p>
               <p className="font-mono text-2xl font-bold text-signal">
-                {confidenceCorr !== null ? confidenceCorr.toFixed(2) : "—"}
+                {confidenceCorr !== null ? confidenceCorr.toFixed(2) : "not yet available"}
               </p>
             </div>
             <div>
               <p className="text-[10px] text-muted">Composite ↔ forward return</p>
               <p className="font-mono text-2xl font-bold text-signal">
-                {compositeCorr !== null ? compositeCorr.toFixed(2) : "—"}
+                {compositeCorr !== null ? compositeCorr.toFixed(2) : "not yet available"}
               </p>
             </div>
           </div>

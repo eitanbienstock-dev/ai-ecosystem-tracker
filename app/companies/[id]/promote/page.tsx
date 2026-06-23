@@ -40,8 +40,8 @@ export default async function PromotePage({ params }: { params: { id: string } }
     <div className="mx-auto max-w-xl">
       <h1 className="font-display mb-2 text-2xl font-bold text-[#e7e8ea]">Promote {c.name}</h1>
       <p className="mb-3 text-sm text-muted">
-        Composite <span className="font-mono text-[#e7e8ea]">{candidateLatest?.composite_score ?? "—"}</span>
-        {" "}&middot; confidence <span className="font-mono text-[#e7e8ea]">{candidateConfidence ?? "—"}/5</span>
+        Composite <span className="font-mono text-[#e7e8ea]">{candidateLatest?.composite_score ?? "not scored"}</span>
+        {" "}&middot; confidence <span className="font-mono text-[#e7e8ea]">{candidateConfidence ?? "not graded"}/5</span>
       </p>
       {candidateConfidence !== null && candidateConfidence < 3 && (
         <p className="mb-3 rounded bg-signal/10 p-2 text-xs text-signal">
