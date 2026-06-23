@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Company, Score } from "@/lib/supabase";
-import { movePipelineRank, archiveCompany } from "@/lib/actions";
+import { movePipelineRank } from "@/lib/actions";
+import ArchiveControl from "./ArchiveControl";
 
 type Row = {
   company: Company;
@@ -102,11 +103,6 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                   >
                     {c.ticker}
                   </span>
-                  {c.rejection_reason && (
-                    <span className="ml-2 text-xs text-muted" title={`Previously rejected: ${c.rejection_reason}`}>
-                      (previously passed)
-                    </span>
-                  )}
                   {signal && signal.newlyResolved > 0 && (
                     <span
                       className="badge ml-1.5 bg-rise/15 text-rise"
@@ -138,7 +134,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                 <td className="px-4 py-3">
                   <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "—"}/5</span>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 relative">
                   <div className="flex justify-end gap-2">
                     <Link
                       href={`/companies/${c.id}/promote`}
@@ -146,14 +142,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                     >
                       Promote to invested
                     </Link>
-                    <form action={archiveCompany.bind(null, c.id)}>
-                      <button
-                        type="submit"
-                        className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-fall hover:text-fall"
-                      >
-                        Archive
-                      </button>
-                    </form>
+                    <ArchiveControl companyId={c.id} />
                   </div>
                 </td>
               </tr>

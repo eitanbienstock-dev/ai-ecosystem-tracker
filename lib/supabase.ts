@@ -54,7 +54,7 @@ export type Company = {
   target_weight_override_pct: number | null;
   override_rationale: string | null;
   needs_review: boolean;
-  rejection_reason: string | null;
+  archive_reason: string | null;
   created_at: string;
   updated_at: string;
 };

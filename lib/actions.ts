@@ -12,6 +12,11 @@ function parseTags(formData: FormData): string[] {
 
 export async function createCompany(formData: FormData) {
   const status = String(formData.get("research_status") || "pipeline");
+  const archiveReason = String(formData.get("archive_reason") || "").trim();
+  if (status === "archived" && !archiveReason) {
+    throw new Error("An archive reason is required when adding a company directly as archived.");
+  }
+
   let pipelineOrder: number | null = null;
   if (status === "pipeline") {
     const { data: maxRow } = await supabase
@@ -42,6 +47,7 @@ export async function createCompany(formData: FormData) {
       : null,
     research_status: status,
     pipeline_order: pipelineOrder,
+    archive_reason: status === "archived" ? archiveReason : null,
     description: String(formData.get("description") || "") || null,
   };
 
@@ -207,13 +213,16 @@ export async function movePipelineRank(companyId: string, direction: "up" | "dow
   revalidatePath("/");
 }
 
-export async function archiveCompany(companyId: string, _formData: FormData) {
+export async function archiveCompany(companyId: string, formData: FormData) {
+  const reason = String(formData.get("archive_reason") || "").trim();
+  if (!reason) throw new Error("An archive reason is required.");
   const today = new Date().toISOString().slice(0, 10);
   const { error } = await supabase
     .from("companies")
     .update({
       research_status: "archived",
       pipeline_order: null,
+      archive_reason: reason,
       last_reviewed_at: today,
       updated_at: new Date().toISOString(),
     })
@@ -238,6 +247,7 @@ export async function restoreToPipeline(companyId: string, _formData: FormData) 
     .update({
       research_status: "pipeline",
       pipeline_order: nextOrder,
+      archive_reason: null,
       last_reviewed_at: today,
       updated_at: new Date().toISOString(),
     })
@@ -286,14 +296,17 @@ export async function deleteCompany(companyId: string, _formData: FormData) {
 
 export async function updateCompany(id: string, formData: FormData) {
   const newStatus = String(formData.get("research_status") || "pipeline");
+  const archiveReasonInput = String(formData.get("archive_reason") || "").trim();
 
   const { data: current } = await supabase
     .from("companies")
-    .select("research_status, pipeline_order")
+    .select("research_status, pipeline_order, archive_reason")
     .eq("id", id)
     .single();
 
   let pipelineOrder: number | null = current?.pipeline_order ?? null;
+  let archiveReason: string | null = current?.archive_reason ?? null;
+
   if (newStatus === "pipeline" && current?.research_status !== "pipeline") {
     const { data: maxRow } = await supabase
       .from("companies")
@@ -303,6 +316,13 @@ export async function updateCompany(id: string, formData: FormData) {
       .limit(1)
       .single();
     pipelineOrder = (maxRow?.pipeline_order ?? 0) + 1;
+    archiveReason = null;
+  } else if (newStatus === "archived") {
+    pipelineOrder = null;
+    if (!archiveReasonInput && current?.research_status !== "archived") {
+      throw new Error("An archive reason is required when archiving a company.");
+    }
+    archiveReason = archiveReasonInput || archiveReason;
   } else if (newStatus !== "pipeline") {
     pipelineOrder = null;
   }
@@ -324,6 +344,7 @@ export async function updateCompany(id: string, formData: FormData) {
       : null,
     research_status: newStatus,
     pipeline_order: pipelineOrder,
+    archive_reason: archiveReason,
     description: String(formData.get("description") || "") || null,
     updated_at: new Date().toISOString(),
   };

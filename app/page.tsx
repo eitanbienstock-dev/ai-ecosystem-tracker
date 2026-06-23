@@ -144,7 +144,9 @@ export default async function HomePage() {
         )}
       </div>
 
-      <ArchiveSection companies={archive} />
+      <ArchiveSection
+        rows={archive.map((c) => ({ company: c, score: latestScore(scoresByCompany[c.id]) }))}
+      />
     </div>
   );
 }
