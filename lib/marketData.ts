@@ -34,9 +34,11 @@ export async function getLivePrice(ticker: string): Promise<LivePrice | null> {
 
 /**
  * Fetches the closing price closest to (on or before) a given date, using
- * daily candles. Looks back up to 5 calendar days to handle weekends and
- * holidays robustly, and returns the most recent close at or before the
- * target date.
+ * daily candles. NOT CURRENTLY USABLE on the free Finnhub tier, historical
+ * candles were moved behind a paid plan and this returns null (a 403) on
+ * every call today. Left in place in case the plan is ever upgraded; do not
+ * rely on this for backfilling history in the meantime. New scores should
+ * use getLivePrice at the moment of creation instead, which works today.
  */
 export async function getHistoricalPrice(ticker: string, dateStr: string): Promise<number | null> {
   const apiKey = process.env.FINNHUB_API_KEY;

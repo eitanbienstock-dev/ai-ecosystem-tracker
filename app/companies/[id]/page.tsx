@@ -318,7 +318,7 @@ export default async function CompanyDetailPage({
             </div>
             {latestScore.price_at_scoring && (
               <p className="mb-3 text-xs text-muted">
-                Price at scoring: <span className="font-mono text-[#e7e8ea]">${Number(latestScore.price_at_scoring).toFixed(2)}</span>
+                Price tracking from {latestScore.price_at_scoring_date ?? latestScore.scored_at}: <span className="font-mono text-[#e7e8ea]">${Number(latestScore.price_at_scoring).toFixed(2)}</span>
                 {livePrice && (
                   <>
                     {" "}&middot; price now: <span className="font-mono text-[#e7e8ea]">${livePrice.price.toFixed(2)}</span>

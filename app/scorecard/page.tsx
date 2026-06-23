@@ -36,8 +36,12 @@ export default async function ScorecardPage() {
           they were right.
         </p>
         <p className="mt-2 max-w-2xl text-xs text-signal">
-          Honest caveat: every score here is days old, not months or years. Nothing on this page is a
-          backtest yet, it is instrumentation that only becomes meaningful once enough time and enough scores
+          Honest caveat: tracking for the original ten scores effectively started{" "}
+          {new Date().toISOString().slice(0, 10)}, not their original scoring date, Finnhub&apos;s historical
+          price data sits behind a paid tier we don&apos;t have, so backfilling the true historical price wasn&apos;t
+          possible without fabricating precision we don&apos;t actually have. Every score from this point forward
+          captures its price live, at the moment it&apos;s created, with no gap. Nothing on this page is a backtest
+          yet either way, it is instrumentation that only becomes meaningful once enough time and enough scores
           accumulate. Do not draw conclusions from short-term price moves this early.
         </p>
       </div>
@@ -68,7 +72,7 @@ export default async function ScorecardPage() {
                 <td className="px-4 py-3 font-mono">{s.composite_score ?? "—"}</td>
                 <td className="px-4 py-3 font-mono">{s.conviction_score ?? "—"}/5</td>
                 <td className="px-4 py-3 font-mono text-muted">
-                  {s.price_at_scoring ? `$${Number(s.price_at_scoring).toFixed(2)}` : "not backfilled"}
+                  {s.price_at_scoring ? `$${Number(s.price_at_scoring).toFixed(2)}` : "not recorded"}
                 </td>
                 <td className="px-4 py-3 font-mono text-muted">
                   {livePrice ? `$${livePrice.toFixed(2)}` : "—"}
@@ -89,14 +93,6 @@ export default async function ScorecardPage() {
         </table>
       </div>
 
-      {rows.some((r) => !r.score.price_at_scoring) && (
-        <p className="mt-4 text-sm text-muted">
-          Some scores show "not backfilled" above.{" "}
-          <a href="/backfill-prices" className="text-signal hover:underline">
-            Run the one-time backfill →
-          </a>
-        </p>
-      )}
     </div>
   );
 }
