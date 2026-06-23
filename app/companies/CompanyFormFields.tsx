@@ -24,14 +24,7 @@ const MATERIALITY_HINTS: Record<string, string> = {
   peripheral: "AI is one input among many, not central to the investment case",
 };
 
-const RESEARCH_STATUSES = [
-  "watching",
-  "researching",
-  "active_watch",
-  "invested",
-  "passed",
-  "exited",
-];
+const RESEARCH_STATUSES = ["pipeline", "archived"];
 
 export default function CompanyFormFields({ company }: { company?: Company }) {
   return (
@@ -91,22 +84,30 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
       </div>
 
       <Field label="Research status">
-        <select
-          name="research_status"
-          defaultValue={company?.research_status ?? "watching"}
-          className="input"
-        >
-          {RESEARCH_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.replace("_", " ")}
-            </option>
-          ))}
-        </select>
+        {company?.research_status === "invested" ? (
+          <>
+            <input type="hidden" name="research_status" value="invested" />
+            <div className="input flex items-center text-muted">
+              invested, real capital deployed
+            </div>
+          </>
+        ) : (
+          <select
+            name="research_status"
+            defaultValue={company?.research_status ?? "pipeline"}
+            className="input"
+          >
+            {RESEARCH_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
         <p className="mt-1 text-xs text-muted">
-          {RESEARCH_STATUSES.filter((s) => STATUS_DEFINITIONS[s])
-            .map((s) => `${s.replace("_", " ")}: ${STATUS_DEFINITIONS[s]}`)
-            .slice(0, 3)
-            .join(" — ")}
+          {company?.research_status === "invested"
+            ? "Use Trim or Exit on the portfolio card to change an invested position, not this form."
+            : `${RESEARCH_STATUSES.map((s) => `${s}: ${STATUS_DEFINITIONS[s]}`).join(" — ")} Promoting to invested happens through the dedicated promote flow, not this form, so it captures entry price and share count.`}
         </p>
       </Field>
 

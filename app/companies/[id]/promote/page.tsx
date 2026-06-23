@@ -24,8 +24,10 @@ export default async function PromotePage({ params }: { params: { id: string } }
     (scoresByCompany[s.company_id] ??= []).push(s);
   }
 
+  const candidateLatest = latestScore(scoresByCompany[c.id]);
+  const candidateScore = candidateLatest?.composite_score ?? 0;
+  const candidateConfidence = candidateLatest?.confidence_score ?? null;
   const existingScores = investedIds.map((id) => latestScore(scoresByCompany[id])?.composite_score ?? 0);
-  const candidateScore = latestScore(scoresByCompany[c.id])?.composite_score ?? 0;
   const sum = existingScores.reduce((a, b) => a + b, 0) + candidateScore;
   const previewTarget = sum > 0 ? Math.round((candidateScore / sum) * 100) : 0;
 
@@ -37,6 +39,16 @@ export default async function PromotePage({ params }: { params: { id: string } }
   return (
     <div className="mx-auto max-w-xl">
       <h1 className="font-display mb-2 text-2xl font-bold text-[#e7e8ea]">Promote {c.name}</h1>
+      <p className="mb-3 text-sm text-muted">
+        Composite <span className="font-mono text-[#e7e8ea]">{candidateLatest?.composite_score ?? "—"}</span>
+        {" "}&middot; confidence <span className="font-mono text-[#e7e8ea]">{candidateConfidence ?? "—"}/5</span>
+      </p>
+      {candidateConfidence !== null && candidateConfidence < 3 && (
+        <p className="mb-3 rounded bg-signal/10 p-2 text-xs text-signal">
+          Confidence is {candidateConfidence}/5, below the usual 3/5 floor for committing capital. Not blocked,
+          just worth confirming the underlying data is solid enough before sizing a real position.
+        </p>
+      )}
       <p className="mb-6 text-sm text-muted">
         Suggested target weight if added now:{" "}
         <span className="font-mono font-medium text-[#e7e8ea]">{previewTarget}%</span>, recalculated across all{" "}

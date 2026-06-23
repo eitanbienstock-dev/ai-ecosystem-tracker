@@ -11,6 +11,19 @@ function parseTags(formData: FormData): string[] {
 }
 
 export async function createCompany(formData: FormData) {
+  const status = String(formData.get("research_status") || "pipeline");
+  let pipelineOrder: number | null = null;
+  if (status === "pipeline") {
+    const { data: maxRow } = await supabase
+      .from("companies")
+      .select("pipeline_order")
+      .eq("research_status", "pipeline")
+      .order("pipeline_order", { ascending: false })
+      .limit(1)
+      .single();
+    pipelineOrder = (maxRow?.pipeline_order ?? 0) + 1;
+  }
+
   const payload = {
     organisation_id: ORG_ID,
     name: String(formData.get("name") || ""),
@@ -27,7 +40,8 @@ export async function createCompany(formData: FormData) {
     market_cap_updated_at: formData.get("market_cap")
       ? new Date().toISOString().slice(0, 10)
       : null,
-    research_status: String(formData.get("research_status") || "watching"),
+    research_status: status,
+    pipeline_order: pipelineOrder,
     description: String(formData.get("description") || "") || null,
   };
 
@@ -55,6 +69,7 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
     .from("companies")
     .update({
       research_status: "invested",
+      pipeline_order: null,
       entry_date: today,
       entry_price: entryPrice,
       shares_held: shares,
@@ -134,7 +149,8 @@ export async function recordTransaction(companyId: string, formData: FormData) {
     updated_at: new Date().toISOString(),
   };
   if (type === "exited") {
-    updatePayload.research_status = "exited";
+    updatePayload.research_status = "archived";
+    updatePayload.pipeline_order = null;
     updatePayload.exit_date = today;
     updatePayload.exit_price = price;
   }
@@ -159,16 +175,75 @@ export async function recordTransaction(companyId: string, formData: FormData) {
   revalidatePath(`/companies/${companyId}`);
 }
 
-export async function updateResearchStatus(companyId: string, formData: FormData) {
-  const newStatus = String(formData.get("research_status"));
+export async function movePipelineRank(companyId: string, direction: "up" | "down") {
+  const { data: rows, error: fetchError } = await supabase
+    .from("companies")
+    .select("id, pipeline_order")
+    .eq("research_status", "pipeline")
+    .order("pipeline_order", { ascending: true });
+  if (fetchError) throw new Error(fetchError.message);
+
+  const ordered = (rows ?? []) as { id: string; pipeline_order: number }[];
+  const idx = ordered.findIndex((r) => r.id === companyId);
+  if (idx === -1) return;
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= ordered.length) return; // already at an edge, no-op
+
+  const a = ordered[idx];
+  const b = ordered[swapIdx];
+
+  const { error: errA } = await supabase
+    .from("companies")
+    .update({ pipeline_order: b.pipeline_order })
+    .eq("id", a.id);
+  if (errA) throw new Error(errA.message);
+
+  const { error: errB } = await supabase
+    .from("companies")
+    .update({ pipeline_order: a.pipeline_order })
+    .eq("id", b.id);
+  if (errB) throw new Error(errB.message);
+
+  revalidatePath("/");
+}
+
+export async function archiveCompany(companyId: string, _formData: FormData) {
   const today = new Date().toISOString().slice(0, 10);
   const { error } = await supabase
     .from("companies")
-    .update({ research_status: newStatus, last_reviewed_at: today, updated_at: new Date().toISOString() })
+    .update({
+      research_status: "archived",
+      pipeline_order: null,
+      last_reviewed_at: today,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", companyId);
   if (error) throw new Error(error.message);
   revalidatePath("/");
-  revalidatePath(`/companies/${companyId}`);
+}
+
+export async function restoreToPipeline(companyId: string, _formData: FormData) {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: maxRow } = await supabase
+    .from("companies")
+    .select("pipeline_order")
+    .eq("research_status", "pipeline")
+    .order("pipeline_order", { ascending: false })
+    .limit(1)
+    .single();
+  const nextOrder = (maxRow?.pipeline_order ?? 0) + 1;
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      research_status: "pipeline",
+      pipeline_order: nextOrder,
+      last_reviewed_at: today,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", companyId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
 }
 
 export async function resolveCatalyst(catalystId: string, formData: FormData) {
@@ -209,21 +284,29 @@ export async function deleteCompany(companyId: string, _formData: FormData) {
   redirect("/");
 }
 
-export async function reevaluateCompany(companyId: string, _formData: FormData) {
-  const today = new Date().toISOString().slice(0, 10);
-  const { error } = await supabase
-    .from("companies")
-    .update({
-      research_status: "watching",
-      last_reviewed_at: today,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", companyId);
-  if (error) throw new Error(error.message);
-  revalidatePath("/");
-}
-
 export async function updateCompany(id: string, formData: FormData) {
+  const newStatus = String(formData.get("research_status") || "pipeline");
+
+  const { data: current } = await supabase
+    .from("companies")
+    .select("research_status, pipeline_order")
+    .eq("id", id)
+    .single();
+
+  let pipelineOrder: number | null = current?.pipeline_order ?? null;
+  if (newStatus === "pipeline" && current?.research_status !== "pipeline") {
+    const { data: maxRow } = await supabase
+      .from("companies")
+      .select("pipeline_order")
+      .eq("research_status", "pipeline")
+      .order("pipeline_order", { ascending: false })
+      .limit(1)
+      .single();
+    pipelineOrder = (maxRow?.pipeline_order ?? 0) + 1;
+  } else if (newStatus !== "pipeline") {
+    pipelineOrder = null;
+  }
+
   const payload = {
     name: String(formData.get("name") || ""),
     ticker: String(formData.get("ticker") || "") || null,
@@ -239,7 +322,8 @@ export async function updateCompany(id: string, formData: FormData) {
     market_cap_updated_at: formData.get("market_cap")
       ? new Date().toISOString().slice(0, 10)
       : null,
-    research_status: String(formData.get("research_status") || "watching"),
+    research_status: newStatus,
+    pipeline_order: pipelineOrder,
     description: String(formData.get("description") || "") || null,
     updated_at: new Date().toISOString(),
   };

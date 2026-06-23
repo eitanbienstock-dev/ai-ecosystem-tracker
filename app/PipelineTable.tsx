@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Company, Score } from "@/lib/supabase";
-import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
-import { updateResearchStatus } from "@/lib/actions";
+import { movePipelineRank, archiveCompany } from "@/lib/actions";
 
 type Row = {
   company: Company;
@@ -14,13 +13,11 @@ type Row = {
 
 const dimLabels = ["ecosystem", "financial", "ai moat", "management", "catalyst", "valuation"];
 const dimWeights = [25, 20, 15, 15, 15, 10];
-const PIPELINE_STATUSES = ["watching", "researching", "active_watch"];
 
 export default function PipelineTable({ rows }: { rows: Row[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [localStatus, setLocalStatus] = useState<Record<string, string>>({});
   const [sortBy, setSortBy] = useState<"default" | "composite" | "confidence">("default");
+  const [pending, setPending] = useState<string | null>(null);
 
   const displayRows =
     sortBy === "default"
@@ -42,32 +39,16 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
   function headerButton(label: string, key: "composite" | "confidence") {
     const active = sortBy === key;
     return (
-      <button onClick={() => setSortBy(key)} className={active ? "text-signal" : ""}>
+      <button onClick={() => setSortBy(active ? "default" : key)} className={active ? "text-signal" : ""}>
         {label} {active && "↓"}
       </button>
     );
   }
 
-  function handleStatusChange(companyId: string, newStatus: string, confidence: number | null | undefined) {
-    if (newStatus === "active_watch" && (confidence ?? 0) < 3) {
-      setLocalStatus((prev) => ({ ...prev, [companyId]: newStatus }));
-      setConfirmingId(companyId);
-      return;
-    }
-    setLocalStatus((prev) => ({ ...prev, [companyId]: newStatus }));
-    document.getElementById(`status-form-${companyId}`)?.dispatchEvent(
-      new Event("submit", { bubbles: true, cancelable: true })
-    );
-  }
-
-  function confirmAnyway(companyId: string) {
-    setConfirmingId(null);
-    (document.getElementById(`status-form-${companyId}`) as HTMLFormElement)?.requestSubmit();
-  }
-
-  function cancelPromotion(companyId: string, originalStatus: string) {
-    setLocalStatus((prev) => ({ ...prev, [companyId]: originalStatus }));
-    setConfirmingId(null);
+  async function move(companyId: string, direction: "up" | "down") {
+    setPending(companyId);
+    await movePipelineRank(companyId, direction);
+    setPending(null);
   }
 
   return (
@@ -75,17 +56,42 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
+            <th className="px-4 py-3">Rank</th>
             <th className="px-4 py-3">Company</th>
-            <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">{headerButton("Composite", "composite")}</th>
             <th className="px-4 py-3">{headerButton("Confidence", "confidence")}</th>
             <th className="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody>
-          {displayRows.map(({ company: c, score: s, signal }) => (
+          {displayRows.map(({ company: c, score: s, signal }, i) => (
             <>
               <tr key={c.id} className="border-b border-line bg-panel/40 hover:bg-panelhi">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1">
+                    <span className="w-5 font-mono text-xs text-muted">{i + 1}</span>
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        disabled={sortBy !== "default" || i === 0 || pending === c.id}
+                        onClick={() => move(c.id, "up")}
+                        title="Move up"
+                        className="leading-none text-muted hover:text-signal disabled:opacity-20"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        disabled={sortBy !== "default" || i === displayRows.length - 1 || pending === c.id}
+                        onClick={() => move(c.id, "down")}
+                        title="Move down"
+                        className="leading-none text-muted hover:text-signal disabled:opacity-20"
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <Link href={`/companies/${c.id}`} className="font-medium text-[#e7e8ea]">
                     {c.name}
@@ -101,23 +107,6 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                       (previously passed)
                     </span>
                   )}
-                </td>
-                <td className="px-4 py-3">
-                  <form id={`status-form-${c.id}`} action={updateResearchStatus.bind(null, c.id)}>
-                    <input type="hidden" name="research_status" value={localStatus[c.id] ?? c.research_status} />
-                    <select
-                      value={localStatus[c.id] ?? c.research_status}
-                      onChange={(e) => handleStatusChange(c.id, e.target.value, s?.confidence_score)}
-                      title={STATUS_DEFINITIONS[c.research_status]}
-                      className="rounded border border-line bg-panelhi px-2 py-1 text-xs text-muted hover:border-signal"
-                    >
-                      {PIPELINE_STATUSES.map((st) => (
-                        <option key={st} value={st}>
-                          {st.replace("_", " ")}
-                        </option>
-                      ))}
-                    </select>
-                  </form>
                   {signal && signal.newlyResolved > 0 && (
                     <span
                       className="badge ml-1.5 bg-rise/15 text-rise"
@@ -142,30 +131,6 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                       review due
                     </span>
                   )}
-                  {confirmingId === c.id && (
-                    <div className="mt-2 rounded bg-signal/10 p-2">
-                      <p className="mb-1.5 text-xs text-signal">
-                        Confidence is {s?.confidence_score ?? "—"}/5, below the usual 3/5 guideline for active
-                        watch. Not blocked, just confirm.
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => confirmAnyway(c.id)}
-                          className="rounded border border-line px-2 py-0.5 text-xs hover:border-signal"
-                        >
-                          Promote anyway
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => cancelPromotion(c.id, c.research_status)}
-                          className="rounded border border-line px-2 py-0.5 text-xs hover:border-fall"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </td>
                 <td className="px-4 py-3">
                   <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "—"}</span>
@@ -174,12 +139,22 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                   <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "—"}/5</span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/companies/${c.id}/promote`}
-                    className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
-                  >
-                    Promote to invested
-                  </Link>
+                  <div className="flex justify-end gap-2">
+                    <Link
+                      href={`/companies/${c.id}/promote`}
+                      className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
+                    >
+                      Promote to invested
+                    </Link>
+                    <form action={archiveCompany.bind(null, c.id)}>
+                      <button
+                        type="submit"
+                        className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-fall hover:text-fall"
+                      >
+                        Archive
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
               {openId === c.id && s && (
@@ -193,11 +168,11 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                       [s.management_ownership_score, s.management_ownership_note],
                       [s.catalyst_clarity_score, s.catalyst_clarity_note],
                       [s.valuation_score, s.valuation_note],
-                    ].map(([v, n], i) => (
-                      <div key={i} className="mb-1.5">
+                    ].map(([v, n], di) => (
+                      <div key={di} className="mb-1.5">
                         <span className="font-mono text-sm font-medium text-[#e7e8ea]">{v ?? "—"}</span>{" "}
                         <span className="text-xs text-muted">
-                          {dimLabels[i]} ({dimWeights[i]}% weight)
+                          {dimLabels[di]} ({dimWeights[di]}% weight)
                         </span>
                         {n && <div className="text-xs text-[#cfd1d5]">{n}</div>}
                       </div>

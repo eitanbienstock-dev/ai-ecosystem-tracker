@@ -111,7 +111,7 @@ export default async function CompanyDetailPage({
           {liveCap ? (
             <div>
               <span className="font-mono text-lg text-[#e7e8ea]">{fmtMarketCap(liveCap.marketCap)}</span>
-              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rise align-middle" />
+              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-muted align-middle" title="Live data" />
               {livePrice && (
                 <span className="ml-2 font-mono text-sm text-muted">${livePrice.price.toFixed(2)}/sh</span>
               )}
@@ -143,15 +143,7 @@ export default async function CompanyDetailPage({
       {c.description && (
         <div className="mb-8 max-w-3xl">
           <p className="text-sm leading-relaxed text-[#cfd1d5]">{c.description}</p>
-          <p className="mt-1 text-[11px] text-muted">
-            Last reviewed {c.last_reviewed_at ?? "never"}
-            {c.next_review_date && (
-              <span className={c.next_review_date <= new Date().toISOString().slice(0, 10) ? "ml-2 text-signal" : "ml-2"}>
-                · next review {c.next_review_date}
-                {c.next_review_date <= new Date().toISOString().slice(0, 10) ? " (due)" : ""}
-              </span>
-            )}
-          </p>
+          <p className="mt-1 text-[11px] text-muted">Last reviewed {c.last_reviewed_at ?? "never"}</p>
         </div>
       )}
 

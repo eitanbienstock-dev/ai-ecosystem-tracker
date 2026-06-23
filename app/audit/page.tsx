@@ -26,7 +26,7 @@ export default async function DataQualityPage() {
   const { data: companies } = await supabase
     .from("companies")
     .select("*")
-    .in("research_status", ["watching", "researching", "active_watch", "invested"]);
+    .in("research_status", ["pipeline", "invested"]);
 
   const { data: scores } = await supabase.from("scores").select("*").order("scored_at", { ascending: false });
 

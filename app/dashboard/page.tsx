@@ -30,7 +30,6 @@ const CATEGORY_ORDER = [
 
 function statusColor(status: string) {
   if (status === "invested") return "bg-rise/15 text-rise";
-  if (status === "active_watch") return "bg-signal/15 text-signal";
   return "bg-panelhi text-muted";
 }
 
@@ -38,7 +37,7 @@ export default async function DashboardPage() {
   const { data: companies, error } = await supabase
     .from("companies")
     .select("*")
-    .in("research_status", ["watching", "researching", "active_watch", "invested"]);
+    .in("research_status", ["pipeline", "invested"]);
 
   if (error) {
     return (

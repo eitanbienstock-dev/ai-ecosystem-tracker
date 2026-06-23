@@ -1,6 +1,5 @@
 import { supabase, Company, Score, DecisionLogEntry } from "@/lib/supabase";
 import { computeTargetWeights, computePositionValues, entryScore, latestScore, daysHeld } from "@/lib/portfolio";
-import { STATUS_TIER_ORDER } from "@/lib/statusDefinitions";
 import PortfolioCard from "./PortfolioCard";
 import PipelineTable from "./PipelineTable";
 import ArchiveSection from "./ArchiveSection";
@@ -20,8 +19,8 @@ export default async function HomePage() {
 
   const list = (companies ?? []) as Company[];
   const invested = list.filter((c) => c.research_status === "invested");
-  const pipeline = list.filter((c) => ["watching", "researching", "active_watch"].includes(c.research_status));
-  const archive = list.filter((c) => ["passed", "exited"].includes(c.research_status));
+  const pipeline = list.filter((c) => c.research_status === "pipeline");
+  const archive = list.filter((c) => c.research_status === "archived");
 
   const { data: scoreRows } = await supabase.from("scores").select("*").order("scored_at", { ascending: true });
   const scoresByCompany: Record<string, Score[]> = {};
@@ -40,14 +39,7 @@ export default async function HomePage() {
     overdueCountByCompany.set(row.company_id, (overdueCountByCompany.get(row.company_id) ?? 0) + 1);
   }
 
-  pipeline.sort((a, b) => {
-    const tierDiff = (STATUS_TIER_ORDER[a.research_status] ?? 9) - (STATUS_TIER_ORDER[b.research_status] ?? 9);
-    if (tierDiff !== 0) return tierDiff;
-    return (
-      (latestScore(scoresByCompany[b.id])?.composite_score ?? -1) -
-      (latestScore(scoresByCompany[a.id])?.composite_score ?? -1)
-    );
-  });
+  pipeline.sort((a, b) => (a.pipeline_order ?? 999) - (b.pipeline_order ?? 999));
 
   const pipelineIds = pipeline.map((c) => c.id);
   const { data: pipelineCatalysts } = await supabase
@@ -95,7 +87,7 @@ export default async function HomePage() {
     <div>
       <div className="mb-10">
         <div className="mb-3 flex items-baseline justify-between">
-          <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Portfolio</h1>
+          <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Investment Portfolio</h1>
           <span className="font-mono text-sm text-muted">{invested.length} holdings</span>
         </div>
         {invested.length === 0 ? (
@@ -131,8 +123,8 @@ export default async function HomePage() {
 
       <div className="mb-10">
         <div className="mb-3">
-          <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Pipeline</h1>
-          <p className="text-xs text-muted">grouped by stage by default, click Composite or Confidence to sort the whole list instead</p>
+          <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Watched Pipeline</h1>
+          <p className="text-xs text-muted">manually ranked, use the arrows to move a company up or down, or click Composite or Confidence to preview a different order</p>
         </div>
         {pipeline.length === 0 ? (
           <div className="rounded border border-dashed border-line py-10 text-center">
