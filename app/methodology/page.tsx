@@ -133,6 +133,21 @@ export default function MethodologyPage() {
       </section>
 
       <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
+          Promotion-time concentration flag
+        </h2>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          The same promote screen checks the candidate against current holdings on two dimensions: whether
+          any invested holding already shares its AI category, and whether any invested holding has a
+          disclosed relationship with the same named partner. Both are non-blocking flags, not a calculated
+          score, since most overlap in this kind of book is structural rather than alarming, an AI
+          infrastructure thesis will naturally cluster around the same handful of hyperscalers and chip
+          suppliers. The flag exists so that clustering is visible at the moment of committing capital,
+          not to discourage it outright.
+        </p>
+      </section>
+
+      <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Workflow states</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
           Every company sits in exactly one of three states. Investment Portfolio is real capital deployed.
