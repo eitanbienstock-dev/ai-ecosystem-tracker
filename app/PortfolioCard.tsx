@@ -16,6 +16,7 @@ type PortfolioCardData = {
   daysHeld: number | null;
   overdueCatalystCount: number;
   log: DecisionLogEntry[];
+  livePrice: number | null;
 };
 
 function fmtMarketCap(value: number | null) {
@@ -30,16 +31,21 @@ const dimWeights = [25, 20, 15, 15, 15, 10];
 
 export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
   const [open, setOpen] = useState(false);
-  const [showCaution, setShowCaution] = useState<null | "trimmed">(null);
+  const [trimPanelOpen, setTrimPanelOpen] = useState(false);
+  const [trimShares, setTrimShares] = useState("");
+  const [trimPrice, setTrimPrice] = useState("");
   const [exitPanelOpen, setExitPanelOpen] = useState(false);
   const [exitReason, setExitReason] = useState("");
+  const [exitPrice, setExitPrice] = useState("");
 
-  const { company, currentScore, entryScoreVal, targetWeight, effectiveTargetWeight, currentWeight, daysHeld, overdueCatalystCount, log } = data;
+  const { company, currentScore, entryScoreVal, targetWeight, effectiveTargetWeight, currentWeight, daysHeld, overdueCatalystCount, log, livePrice } = data;
 
   const scoreDelta = (currentScore?.composite_score ?? 0) - (entryScoreVal?.composite_score ?? 0);
   const drift = currentWeight - effectiveTargetWeight;
   const weightFlagged = Math.abs(drift) >= 10;
   const underYear = (daysHeld ?? 0) < 365;
+  const currentShares = company.shares_held ?? 0;
+  const defaultPriceStr = (livePrice ?? company.entry_price ?? 0).toFixed(2);
 
   const dims = currentScore
     ? [
@@ -52,28 +58,40 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
       ]
     : [];
 
-  function attemptTrim() {
-    if (underYear) {
-      setShowCaution("trimmed");
-    } else {
-      const form = document.getElementById(`txn-form-${company.id}`) as HTMLFormElement;
-      (form.elements.namedItem("entry_type") as HTMLInputElement).value = "trimmed";
-      form.requestSubmit();
-    }
+  function openTrimPanel() {
+    setTrimShares("");
+    setTrimPrice(defaultPriceStr);
+    setTrimPanelOpen(true);
   }
 
-  function proceedTrimAnyway() {
+  function openExitPanel() {
+    setExitReason("");
+    setExitPrice(defaultPriceStr);
+    setExitPanelOpen(true);
+  }
+
+  const trimSharesNum = Number(trimShares);
+  const trimValid = trimSharesNum > 0 && trimSharesNum <= currentShares && Number(trimPrice) > 0;
+
+  function confirmTrim() {
+    if (!trimValid) return;
     const form = document.getElementById(`txn-form-${company.id}`) as HTMLFormElement;
     (form.elements.namedItem("entry_type") as HTMLInputElement).value = "trimmed";
-    setShowCaution(null);
+    (form.elements.namedItem("price") as HTMLInputElement).value = trimPrice;
+    (form.elements.namedItem("shares") as HTMLInputElement).value = trimShares;
+    setTrimPanelOpen(false);
     form.requestSubmit();
   }
 
+  const exitValid = exitReason.trim().length > 0 && Number(exitPrice) > 0;
+
   function confirmExit() {
-    if (!exitReason.trim()) return;
+    if (!exitValid) return;
     const form = document.getElementById(`txn-form-${company.id}`) as HTMLFormElement;
     (form.elements.namedItem("entry_type") as HTMLInputElement).value = "exited";
     (form.elements.namedItem("archive_reason") as HTMLInputElement).value = exitReason;
+    (form.elements.namedItem("price") as HTMLInputElement).value = exitPrice;
+    (form.elements.namedItem("shares") as HTMLInputElement).value = String(currentShares);
     setExitPanelOpen(false);
     setExitReason("");
     form.requestSubmit();
@@ -227,13 +245,13 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
 
           <div className="flex gap-2">
             <button
-              onClick={attemptTrim}
+              onClick={openTrimPanel}
               className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
             >
               Trim
             </button>
             <button
-              onClick={() => setExitPanelOpen(true)}
+              onClick={openExitPanel}
               className="rounded border border-line px-3 py-1 text-xs hover:border-fall"
             >
               Exit
@@ -246,21 +264,50 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
             </Link>
           </div>
 
-          {showCaution && (
+          {trimPanelOpen && (
             <div className="mt-3 rounded bg-signal/10 p-3">
-              <p className="mb-2 text-xs text-signal">
-                Held {Math.round((daysHeld ?? 0) / 30)} months, below the preferred 12 month minimum. Not blocked,
-                just worth confirming.
-              </p>
+              {underYear && (
+                <p className="mb-2 text-xs text-signal">
+                  Held {Math.round((daysHeld ?? 0) / 30)} months, below the preferred 12 month minimum. Not
+                  blocked, just worth confirming.
+                </p>
+              )}
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="mb-1 block text-xs text-muted">Shares to trim (of {currentShares})</span>
+                  <input
+                    autoFocus
+                    type="number"
+                    value={trimShares}
+                    onChange={(e) => setTrimShares(e.target.value)}
+                    className="input w-full text-xs"
+                    placeholder="0"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs text-muted">Price ($)</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={trimPrice}
+                    onChange={(e) => setTrimPrice(e.target.value)}
+                    className="input w-full text-xs"
+                  />
+                </label>
+              </div>
+              {trimSharesNum > currentShares && (
+                <p className="mb-2 text-xs text-fall">Can&apos;t trim more than the {currentShares} shares held.</p>
+              )}
               <div className="flex gap-2">
                 <button
-                  onClick={proceedTrimAnyway}
-                  className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
+                  onClick={confirmTrim}
+                  disabled={!trimValid}
+                  className="rounded border border-signal bg-signal/20 px-3 py-1 text-xs text-signal hover:bg-signal/30 disabled:opacity-40"
                 >
-                  Proceed anyway
+                  Confirm trim
                 </button>
                 <button
-                  onClick={() => setShowCaution(null)}
+                  onClick={() => setTrimPanelOpen(false)}
                   className="rounded border border-line px-3 py-1 text-xs hover:border-fall"
                 >
                   Cancel
@@ -277,9 +324,18 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
                   blocked, just worth confirming.
                 </p>
               )}
+              <label className="mb-2 block">
+                <span className="mb-1 block text-xs text-muted">Exit price ($), for all {currentShares} shares</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={exitPrice}
+                  onChange={(e) => setExitPrice(e.target.value)}
+                  className="input w-full text-xs"
+                />
+              </label>
               <p className="mb-1.5 text-xs font-medium text-[#e7e8ea]">Why is this being exited?</p>
               <textarea
-                autoFocus
                 value={exitReason}
                 onChange={(e) => setExitReason(e.target.value)}
                 rows={3}
@@ -289,7 +345,7 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
               <div className="flex gap-2">
                 <button
                   onClick={confirmExit}
-                  disabled={!exitReason.trim()}
+                  disabled={!exitValid}
                   className="rounded border border-fall bg-fall/20 px-3 py-1 text-xs text-fall hover:bg-fall/30 disabled:opacity-40"
                 >
                   Confirm exit

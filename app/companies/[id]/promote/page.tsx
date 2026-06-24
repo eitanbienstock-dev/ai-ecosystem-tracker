@@ -10,6 +10,18 @@ export default async function PromotePage({ params }: { params: { id: string } }
   if (!company) notFound();
   const c = company as Company;
 
+  if (c.research_status === "invested") {
+    return (
+      <div className="mx-auto max-w-xl">
+        <h1 className="font-display mb-2 text-2xl font-bold text-[#e7e8ea]">{c.name} is already invested</h1>
+        <p className="text-sm text-muted">
+          This company already has real capital deployed. Use Trim or Exit on its portfolio card on the
+          homepage to change the position, not this page, which is only for promoting a new candidate.
+        </p>
+      </div>
+    );
+  }
+
   const { data: invested } = await supabase.from("companies").select("id").eq("research_status", "invested");
   const investedIds = (invested ?? []).map((x) => x.id);
 

@@ -51,39 +51,53 @@ export default async function DashboardPage() {
       <div className="mb-10">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">By AI category</h2>
         <div className="grid grid-cols-2 gap-4">
-          {CATEGORY_ORDER.filter((cat) => byCategory[cat]?.length).map((cat) => (
-            <div key={cat} className="rounded border border-line bg-panel p-4">
-              <div className="mb-3 flex items-baseline justify-between">
-                <span className="text-sm font-medium text-[#e7e8ea]">{CATEGORY_LABELS[cat] ?? cat}</span>
-                <span className="font-mono text-xs text-muted">{byCategory[cat].length}</span>
-              </div>
-              <div className="flex flex-col gap-2">
-                {byCategory[cat].map((c) => (
-                  <div key={c.id} className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="text-sm text-[#e7e8ea]">{c.name}</span>{" "}
-                      <span className="font-mono text-xs text-muted">{c.ticker}</span>
-                      <div className="mt-0.5 flex flex-wrap gap-1">
-                        {(c.sector_tags ?? []).map((t) => (
-                          <span key={t} className="text-[10px] text-muted">
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <span className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={`badge ${statusColor(c.research_status)}`}>
-                        {c.research_status.replace("_", " ")}
-                      </span>
-                      {c.ai_materiality && (
-                        <span className="text-[10px] text-muted">{c.ai_materiality.replace(/_/g, " ")}</span>
-                      )}
-                    </span>
+          {CATEGORY_ORDER.map((cat) => {
+            const companies = byCategory[cat] ?? [];
+            if (companies.length === 0) {
+              return (
+                <div key={cat} className="rounded border border-dashed border-line bg-panel/40 p-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-medium text-muted">{CATEGORY_LABELS[cat] ?? cat}</span>
+                    <span className="font-mono text-xs text-muted">0</span>
                   </div>
-                ))}
+                  <p className="mt-1 text-xs text-muted">No companies currently researched in this category.</p>
+                </div>
+              );
+            }
+            return (
+              <div key={cat} className="rounded border border-line bg-panel p-4">
+                <div className="mb-3 flex items-baseline justify-between">
+                  <span className="text-sm font-medium text-[#e7e8ea]">{CATEGORY_LABELS[cat] ?? cat}</span>
+                  <span className="font-mono text-xs text-muted">{companies.length}</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {companies.map((c) => (
+                    <div key={c.id} className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-sm text-[#e7e8ea]">{c.name}</span>{" "}
+                        <span className="font-mono text-xs text-muted">{c.ticker}</span>
+                        <div className="mt-0.5 flex flex-wrap gap-1">
+                          {(c.sector_tags ?? []).map((t) => (
+                            <span key={t} className="text-[10px] text-muted">
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="flex shrink-0 flex-col items-end gap-1">
+                        <span className={`badge ${statusColor(c.research_status)}`}>
+                          {c.research_status.replace("_", " ")}
+                        </span>
+                        {c.ai_materiality && (
+                          <span className="text-[10px] text-muted">{c.ai_materiality.replace(/_/g, " ")}</span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

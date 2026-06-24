@@ -40,18 +40,20 @@ export function effectiveTarget(company: Company, suggested: number): number {
 
 export async function computePositionValues(
   invested: Company[]
-): Promise<{ valueByCompany: Map<string, number>; totalValue: number }> {
+): Promise<{ valueByCompany: Map<string, number>; totalValue: number; priceByCompany: Map<string, number> }> {
   const valueByCompany = new Map<string, number>();
+  const priceByCompany = new Map<string, number>();
   await Promise.all(
     invested.map(async (c) => {
       const shares = c.shares_held ?? 0;
       const live = c.ticker ? await getLivePrice(c.ticker) : null;
       const price = live?.price ?? c.entry_price ?? 0;
       valueByCompany.set(c.id, shares * price);
+      if (live?.price) priceByCompany.set(c.id, live.price);
     })
   );
   const totalValue = Array.from(valueByCompany.values()).reduce((a, b) => a + b, 0);
-  return { valueByCompany, totalValue };
+  return { valueByCompany, totalValue, priceByCompany };
 }
 
 export function daysHeld(entryDate: string | null): number | null {

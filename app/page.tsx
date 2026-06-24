@@ -70,7 +70,7 @@ export default async function HomePage() {
   }
 
   const targetWeights = computeTargetWeights(invested, scoresByCompany);
-  const { valueByCompany, totalValue } = await computePositionValues(invested);
+  const { valueByCompany, totalValue, priceByCompany } = await computePositionValues(invested);
 
   const investedIds = invested.map((c) => c.id);
   const { data: logRows } = await supabase
@@ -113,6 +113,7 @@ export default async function HomePage() {
                     daysHeld: daysHeld(c.entry_date),
                     overdueCatalystCount: overdueCountByCompany.get(c.id) ?? 0,
                     log: logByCompany[c.id] ?? [],
+                    livePrice: priceByCompany.get(c.id) ?? null,
                   }}
                 />
               );

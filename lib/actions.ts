@@ -66,6 +66,15 @@ export async function createCompany(formData: FormData) {
 }
 
 export async function promoteToInvested(companyId: string, formData: FormData) {
+  const { data: current } = await supabase
+    .from("companies")
+    .select("research_status")
+    .eq("id", companyId)
+    .single();
+  if (current?.research_status === "invested") {
+    throw new Error("This company is already invested. Use Trim or Exit instead of promoting it again.");
+  }
+
   const entryPrice = Number(formData.get("entry_price") || 0);
   const shares = Number(formData.get("shares") || 0);
   const note = String(formData.get("note") || "");
