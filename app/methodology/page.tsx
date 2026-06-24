@@ -57,7 +57,10 @@ export default function MethodologyPage() {
           ecosystem intelligence on AI stack dependencies produces better risk-adjusted returns than
           passive AI exposure. The 100 billion dollar ceiling is checked at intake; what happens if a
           holding grows past it afterward is an open question the system does not yet have a stated answer
-          to.
+          to. Exceptions to the ceiling can be made at intake itself, but only deliberately and visibly, not
+          quietly: Marvell Technology was added at roughly 244 billion dollars specifically because its
+          strategic position in AI custom silicon and optical interconnect was judged to outweigh the size
+          consideration, a recorded, one-off override of the screen rather than a change to the screen.
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {CATEGORY_ORDER.map((cat) => (
@@ -79,7 +82,10 @@ export default function MethodologyPage() {
           <Link href="/companies/new" className="text-signal hover:underline">
             added
           </Link>{" "}
-          at all.
+          at all. Category balance is not itself a goal: a coverage gap is one legitimate reason to go
+          looking, but it never justifies adding a company that is not genuinely one of the strongest
+          opportunities found. Several names can land in the same category if that is honestly where the
+          best ideas are.
         </p>
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Sourcing</p>
         <ul className="mb-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-[#cfd1d5]">
