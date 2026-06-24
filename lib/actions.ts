@@ -3,6 +3,9 @@
 import { supabase } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getLivePrice } from "@/lib/marketData";
+
+const BENCHMARK_TICKER = "SPY";
 
 const ORG_ID = process.env.DEFAULT_ORG_ID as string;
 
@@ -80,6 +83,8 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
   const note = String(formData.get("note") || "");
   const today = new Date().toISOString().slice(0, 10);
 
+  const benchmarkQuote = await getLivePrice(BENCHMARK_TICKER);
+
   const { error: updateError } = await supabase
     .from("companies")
     .update({
@@ -87,6 +92,8 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
       entry_date: today,
       entry_price: entryPrice,
       shares_held: shares,
+      benchmark_ticker: BENCHMARK_TICKER,
+      benchmark_price_at_entry: benchmarkQuote?.price ?? null,
       last_reviewed_at: today,
       updated_at: new Date().toISOString(),
     })

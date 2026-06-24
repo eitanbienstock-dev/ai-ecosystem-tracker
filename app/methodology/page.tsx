@@ -146,6 +146,22 @@ export default function MethodologyPage() {
 
       <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
+          Benchmark comparison
+        </h2>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          Each invested holding is compared against the S&amp;P 500 over the same window, from that
+          holding&apos;s own entry date to now, not a shared calendar period, since capital was deployed on
+          different dates and a single shared window would misrepresent the comparison for holdings entered
+          at different times. The benchmark price is captured at the moment of entry, the same discipline
+          already applied to a holding&apos;s own entry price, and compared against its live price today. The
+          portfolio-level number weights each holding by its current position value. This is the explicit
+          test of the standing goal: deep ecosystem intelligence should produce returns exceeding the broad
+          market, not just positive returns in isolation.
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Validation: does the ranking actually work
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">

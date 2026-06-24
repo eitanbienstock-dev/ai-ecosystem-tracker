@@ -1,5 +1,6 @@
 import { supabase, Company, Score } from "@/lib/supabase";
 import { getLivePrice } from "@/lib/marketData";
+import { computeBenchmarkRow } from "@/lib/portfolio";
 import ScorecardTable from "../ScorecardTable";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,39 @@ export default async function ScorecardPage() {
       if (p) liveByTicker.set(t as string, p.price);
     })
   );
+
+  const invested = (companies ?? []).filter((c: any) => c.research_status === "invested") as Company[];
+  const benchmarkTickers = Array.from(new Set(invested.map((c) => c.benchmark_ticker).filter(Boolean) as string[]));
+  const liveBenchmarkByTicker = new Map<string, number>();
+  await Promise.all(
+    benchmarkTickers.map(async (t) => {
+      const p = await getLivePrice(t);
+      if (p) liveBenchmarkByTicker.set(t, p.price);
+    })
+  );
+
+  const benchmarkRows = invested.map((c) => {
+    const livePrice = c.ticker ? liveByTicker.get(c.ticker) ?? null : null;
+    const liveBenchmarkPrice = c.benchmark_ticker ? liveBenchmarkByTicker.get(c.benchmark_ticker) ?? null : null;
+    const { holdingReturnPct, benchmarkReturnPct, excessPct } = computeBenchmarkRow(c, livePrice, liveBenchmarkPrice);
+    const value = (c.shares_held ?? 0) * (livePrice ?? c.entry_price ?? 0);
+    return { company: c, holdingReturnPct, benchmarkReturnPct, excessPct, value };
+  });
+  const totalBenchmarkableValue = benchmarkRows
+    .filter((r) => r.excessPct !== null)
+    .reduce((a, r) => a + r.value, 0);
+  const weightedHoldingReturn =
+    totalBenchmarkableValue > 0
+      ? benchmarkRows
+          .filter((r) => r.excessPct !== null)
+          .reduce((a, r) => a + (r.holdingReturnPct ?? 0) * (r.value / totalBenchmarkableValue), 0)
+      : null;
+  const weightedBenchmarkReturn =
+    totalBenchmarkableValue > 0
+      ? benchmarkRows
+          .filter((r) => r.excessPct !== null)
+          .reduce((a, r) => a + (r.benchmarkReturnPct ?? 0) * (r.value / totalBenchmarkableValue), 0)
+      : null;
 
   const allScores = (scores ?? []) as Score[];
 
@@ -130,6 +164,67 @@ export default async function ScorecardPage() {
           unconfirmed inputs, a test of whether data reliability itself predicts returns, not a
           price-direction forecast on its own.
         </p>
+      </div>
+
+      <div className="mb-6 rounded border border-line bg-panel p-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Portfolio vs benchmark</p>
+        {benchmarkRows.length === 0 ? (
+          <p className="text-sm text-muted">No invested holdings yet.</p>
+        ) : (
+          <>
+            <div className="mb-3 flex gap-8">
+              <div>
+                <p className="text-[10px] text-muted">Portfolio return since entry, value-weighted</p>
+                <p className="font-mono text-2xl font-bold text-[#e7e8ea]">
+                  {weightedHoldingReturn !== null ? `${weightedHoldingReturn >= 0 ? "+" : ""}${weightedHoldingReturn.toFixed(1)}%` : "not yet available"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted">S&amp;P 500 over the same entry windows</p>
+                <p className="font-mono text-2xl font-bold text-muted">
+                  {weightedBenchmarkReturn !== null ? `${weightedBenchmarkReturn >= 0 ? "+" : ""}${weightedBenchmarkReturn.toFixed(1)}%` : "not yet available"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted">Excess</p>
+                <p
+                  className={`font-mono text-2xl font-bold ${
+                    weightedHoldingReturn !== null && weightedBenchmarkReturn !== null
+                      ? weightedHoldingReturn - weightedBenchmarkReturn >= 0
+                        ? "text-rise"
+                        : "text-fall"
+                      : "text-muted"
+                  }`}
+                >
+                  {weightedHoldingReturn !== null && weightedBenchmarkReturn !== null
+                    ? `${weightedHoldingReturn - weightedBenchmarkReturn >= 0 ? "+" : ""}${(weightedHoldingReturn - weightedBenchmarkReturn).toFixed(1)}pts`
+                    : "not yet available"}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {benchmarkRows.map((r) => (
+                <p key={r.company.id} className="text-xs text-muted">
+                  <span className="font-medium text-[#e7e8ea]">{r.company.name}</span>{" "}
+                  {r.holdingReturnPct !== null ? `${r.holdingReturnPct >= 0 ? "+" : ""}${r.holdingReturnPct.toFixed(1)}%` : "not yet available"}
+                  {" vs "}
+                  {r.company.benchmark_ticker ?? "benchmark"}{" "}
+                  {r.benchmarkReturnPct !== null ? `${r.benchmarkReturnPct >= 0 ? "+" : ""}${r.benchmarkReturnPct.toFixed(1)}%` : "not yet available"}
+                  {r.excessPct !== null && (
+                    <span className={r.excessPct >= 0 ? "text-rise" : "text-fall"}>
+                      {" "}({r.excessPct >= 0 ? "+" : ""}{r.excessPct.toFixed(1)}pts)
+                    </span>
+                  )}
+                </p>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px] text-muted">
+              Each holding is compared against the S&amp;P 500 over the same window, from that holding&apos;s own
+              entry date to now, not a shared calendar period, since capital was deployed on different dates.
+              The aggregate weights each holding by its current position value.
+            </p>
+          </>
+        )}
       </div>
 
       <ScorecardTable rows={rows} />

@@ -60,3 +60,19 @@ export function daysHeld(entryDate: string | null): number | null {
   if (!entryDate) return null;
   return Math.round((Date.now() - new Date(entryDate).getTime()) / 86_400_000);
 }
+
+export function computeBenchmarkRow(
+  c: Company,
+  livePrice: number | null,
+  liveBenchmarkPrice: number | null
+): { holdingReturnPct: number | null; benchmarkReturnPct: number | null; excessPct: number | null } {
+  const holdingReturnPct =
+    c.entry_price && livePrice ? ((livePrice - c.entry_price) / c.entry_price) * 100 : null;
+  const benchmarkReturnPct =
+    c.benchmark_price_at_entry && liveBenchmarkPrice
+      ? ((liveBenchmarkPrice - c.benchmark_price_at_entry) / c.benchmark_price_at_entry) * 100
+      : null;
+  const excessPct =
+    holdingReturnPct !== null && benchmarkReturnPct !== null ? holdingReturnPct - benchmarkReturnPct : null;
+  return { holdingReturnPct, benchmarkReturnPct, excessPct };
+}
