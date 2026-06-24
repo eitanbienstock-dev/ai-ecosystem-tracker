@@ -1,4 +1,11 @@
 const FINNHUB_BASE = "https://finnhub.io/api/v1";
+const FETCH_TIMEOUT_MS = 4000;
+
+function fetchWithTimeout(url: string, ms = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { cache: "no-store", signal: controller.signal }).finally(() => clearTimeout(timer));
+}
 
 export type LiveMarketCap = {
   marketCap: number; // raw USD value
@@ -19,9 +26,8 @@ export async function getLivePrice(ticker: string): Promise<LivePrice | null> {
   if (!apiKey || !ticker) return null;
 
   try {
-    const res = await fetch(
-      `${FINNHUB_BASE}/quote?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`,
-      { cache: "no-store" }
+    const res = await fetchWithTimeout(
+      `${FINNHUB_BASE}/quote?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -49,9 +55,8 @@ export async function getHistoricalPrice(ticker: string, dateStr: string): Promi
     const from = Math.floor((target.getTime() - 5 * 86_400_000) / 1000);
     const to = Math.floor(target.getTime() / 1000);
 
-    const res = await fetch(
-      `${FINNHUB_BASE}/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=D&from=${from}&to=${to}&token=${apiKey}`,
-      { cache: "no-store" }
+    const res = await fetchWithTimeout(
+      `${FINNHUB_BASE}/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=D&from=${from}&to=${to}&token=${apiKey}`
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -76,9 +81,8 @@ export async function getLiveMarketCap(
   if (!apiKey || !ticker) return null;
 
   try {
-    const res = await fetch(
-      `${FINNHUB_BASE}/stock/profile2?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`,
-      { cache: "no-store" }
+    const res = await fetchWithTimeout(
+      `${FINNHUB_BASE}/stock/profile2?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`
     );
 
     if (!res.ok) return null;

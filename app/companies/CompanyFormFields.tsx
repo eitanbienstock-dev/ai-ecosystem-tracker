@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Company } from "@/lib/supabase";
 import { STATUS_DEFINITIONS } from "@/lib/statusDefinitions";
 import { SECTOR_TAGS } from "@/lib/tags";
@@ -27,6 +30,8 @@ const MATERIALITY_HINTS: Record<string, string> = {
 const RESEARCH_STATUSES = ["pipeline", "archived"];
 
 export default function CompanyFormFields({ company }: { company?: Company }) {
+  const [status, setStatus] = useState(company?.research_status ?? "pipeline");
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
@@ -94,7 +99,8 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
         ) : (
           <select
             name="research_status"
-            defaultValue={company?.research_status ?? "pipeline"}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
             className="input"
           >
             {RESEARCH_STATUSES.map((s) => (
@@ -111,18 +117,21 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
         </p>
       </Field>
 
-      <Field
-        label="Archive reason"
-        hint="Only used if research status above is archived. Required when archiving a company directly from this form, whether that's a brand-new company you're choosing not to pursue, or an existing one."
-      >
-        <textarea
-          name="archive_reason"
-          defaultValue={company?.research_status === "archived" ? company?.archive_reason ?? "" : ""}
-          rows={3}
-          className="input"
-          placeholder="Why this company isn't going into the pipeline"
-        />
-      </Field>
+      {status === "archived" && (
+        <Field
+          label="Archive reason"
+          required
+          hint="Why this company isn't going into the pipeline"
+        >
+          <textarea
+            name="archive_reason"
+            required
+            defaultValue={company?.research_status === "archived" ? company?.archive_reason ?? "" : ""}
+            rows={3}
+            className="input"
+          />
+        </Field>
+      )}
 
       <Field label="Sector tags">
         <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 rounded border border-line bg-panelhi p-3">
