@@ -20,6 +20,16 @@ export async function createCompany(formData: FormData) {
     throw new Error("An archive reason is required when adding a company directly as archived.");
   }
 
+  const ticker = String(formData.get("ticker") || "").trim();
+  const aiCategory = String(formData.get("ai_category") || "").trim();
+  const aiMateriality = String(formData.get("ai_materiality") || "").trim();
+  const description = String(formData.get("description") || "").trim();
+  if (!ticker || !aiCategory || !aiMateriality || !description) {
+    throw new Error(
+      "Ticker, AI category, AI materiality, and a description are all required to add a company, the recorded basis for why it is being tracked at all."
+    );
+  }
+
   let pipelineOrder: number | null = null;
   if (status === "pipeline") {
     const { data: maxRow } = await supabase
@@ -315,6 +325,16 @@ export async function deleteCompany(companyId: string, _formData: FormData) {
 export async function updateCompany(id: string, formData: FormData) {
   const newStatus = String(formData.get("research_status") || "pipeline");
   const archiveReasonInput = String(formData.get("archive_reason") || "").trim();
+
+  const ticker = String(formData.get("ticker") || "").trim();
+  const aiCategory = String(formData.get("ai_category") || "").trim();
+  const aiMateriality = String(formData.get("ai_materiality") || "").trim();
+  const description = String(formData.get("description") || "").trim();
+  if (!ticker || !aiCategory || !aiMateriality || !description) {
+    throw new Error(
+      "Ticker, AI category, AI materiality, and a description are all required, the recorded basis for why this company is being tracked at all."
+    );
+  }
 
   const { data: current } = await supabase
     .from("companies")

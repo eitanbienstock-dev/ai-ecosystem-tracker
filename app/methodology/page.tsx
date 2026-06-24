@@ -47,11 +47,14 @@ export default function MethodologyPage() {
       <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Universe</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Public US companies with market caps up to roughly 100 billion dollars, mapped against a
-          ten-category AI ecosystem taxonomy modeled on the frameworks used by Goldman Sachs and Morgan
-          Stanley research. The portfolio is concentrated by design, around ten names, not a diversified
-          basket, and the thesis is that deep ecosystem intelligence on AI stack dependencies produces
-          better risk-adjusted returns than passive AI exposure.
+          Companies listed on a major US exchange, Nasdaq or NYSE, with market caps up to roughly 100
+          billion dollars, mapped against a ten-category AI ecosystem taxonomy modeled on the frameworks
+          used by Goldman Sachs and Morgan Stanley research. Exchange listing, not country of
+          incorporation, is what matters here, since it is what makes a position genuinely investable and
+          liquid. Nebius Group, a Dutch entity trading on Nasdaq, is a working example. The portfolio is
+          concentrated by design, around ten names, not a diversified basket, and the thesis is that deep
+          ecosystem intelligence on AI stack dependencies produces better risk-adjusted returns than
+          passive AI exposure.
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {CATEGORY_ORDER.map((cat) => (
@@ -60,6 +63,40 @@ export default function MethodologyPage() {
             </span>
           ))}
         </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
+          How candidates enter the pipeline
+        </h2>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          A scoring system is only as good as what it gets asked to score. A candidate is sourced from one
+          of four channels, then has to clear an eligibility screen before it is added at all.
+        </p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Sourcing</p>
+        <ul className="mb-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-[#cfd1d5]">
+          <li>
+            A coverage gap. The Coverage map flags any AI category with zero companies researched, and
+            that gap is itself the prompt to go find a candidate there.
+          </li>
+          <li>
+            An ecosystem mention. Researching one company&apos;s partners, suppliers, or customers
+            regularly turns up a name not yet in the universe.
+          </li>
+          <li>A specific company named in scanned institutional research, logged in the Research digest.</li>
+          <li>Direct observation: news, filings, or market activity surfacing a name worth a look.</li>
+        </ul>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+          Eligibility screen, enforced at intake
+        </p>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          Ticker, AI category, AI materiality, and a real description of why the company is being tracked
+          are all required fields, not optional ones, both in the form and in the underlying action that
+          saves it. A name with no recorded rationale is indistinguishable from a passing thought, and the
+          system will not save one. This is the one piece of intake discipline that is mechanically
+          enforced rather than just practiced; sourcing itself stays a human judgment call informed by the
+          four channels above, not something a screener generates automatically.
+        </p>
       </section>
 
       <section className="mb-8">

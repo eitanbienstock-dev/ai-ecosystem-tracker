@@ -44,9 +44,10 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
             placeholder="e.g. Datadog"
           />
         </Field>
-        <Field label="Ticker">
+        <Field label="Ticker" required>
           <input
             name="ticker"
+            required
             defaultValue={company?.ticker ?? ""}
             className="input font-mono"
             placeholder="e.g. DDOG"
@@ -55,9 +56,10 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="AI category">
+        <Field label="AI category" required>
           <select
             name="ai_category"
+            required
             defaultValue={company?.ai_category ?? ""}
             className="input"
           >
@@ -69,9 +71,10 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
             ))}
           </select>
         </Field>
-        <Field label="AI materiality">
+        <Field label="AI materiality" required>
           <select
             name="ai_materiality"
+            required
             defaultValue={company?.ai_materiality ?? ""}
             className="input"
           >
@@ -158,13 +161,18 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
         />
       </Field>
 
-      <Field label="Description">
+      <Field
+        label="Description"
+        required
+        hint="The recorded rationale for why this company is being tracked at all, not just what it does"
+      >
         <textarea
           name="description"
+          required
           defaultValue={company?.description ?? ""}
           rows={4}
           className="input"
-          placeholder="What does this company actually do, in one or two sentences"
+          placeholder="What does this company actually do, and why is it worth tracking"
         />
       </Field>
 
