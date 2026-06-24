@@ -146,6 +146,22 @@ export default function MethodologyPage() {
 
       <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
+          Capital concentration
+        </h2>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          The Coverage map separates two different questions. Capital concentration is about real money:
+          what share of currently invested value sits in each AI category, and what share sits in a holding
+          with a disclosed relationship to a given named partner, weighted by each holding&apos;s current
+          position value, not a simple count of companies. A holding with several partners contributes its
+          full value to each one, since the position is genuinely exposed through every one of those
+          relationships at once, not divided across them. Research coverage, shown separately further down
+          the same page, answers a different question: which parts of the taxonomy have been researched at
+          all, independent of whether anything found there was ever funded.
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Benchmark comparison
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
