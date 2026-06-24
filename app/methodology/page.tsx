@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/taxonomy";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +55,9 @@ export default function MethodologyPage() {
           liquid. Nebius Group, a Dutch entity trading on Nasdaq, is a working example. The portfolio is
           concentrated by design, around ten names, not a diversified basket, and the thesis is that deep
           ecosystem intelligence on AI stack dependencies produces better risk-adjusted returns than
-          passive AI exposure.
+          passive AI exposure. The 100 billion dollar ceiling is checked at intake; what happens if a
+          holding grows past it afterward is an open question the system does not yet have a stated answer
+          to.
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {CATEGORY_ORDER.map((cat) => (
@@ -72,19 +75,33 @@ export default function MethodologyPage() {
         <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
           A scoring system is only as good as what it gets asked to score. A candidate is sourced from one
           of four channels, often several at once as a researched batch rather than one name at a time, and
-          has to clear an eligibility screen before it is added at all.
+          has to clear an eligibility screen before it is{" "}
+          <Link href="/companies/new" className="text-signal hover:underline">
+            added
+          </Link>{" "}
+          at all.
         </p>
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Sourcing</p>
         <ul className="mb-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-[#cfd1d5]">
           <li>
-            A coverage gap. The Coverage map flags any AI category with zero companies researched, and
-            that gap is itself the prompt to go find a candidate there.
+            A coverage gap. The{" "}
+            <Link href="/dashboard" className="text-signal hover:underline">
+              Coverage map
+            </Link>{" "}
+            flags any AI category with zero companies researched, and that gap is itself the prompt to go
+            find a candidate there.
           </li>
           <li>
             An ecosystem mention. Researching one company&apos;s partners, suppliers, or customers
             regularly turns up a name not yet in the universe.
           </li>
-          <li>A specific company named in scanned institutional research, logged in the Research digest.</li>
+          <li>
+            A specific company named in scanned institutional research, logged in the{" "}
+            <Link href="/research" className="text-signal hover:underline">
+              Research digest
+            </Link>
+            .
+          </li>
           <li>Direct observation: news, filings, or market activity surfacing a name worth a look.</li>
         </ul>
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
@@ -111,6 +128,22 @@ export default function MethodologyPage() {
           system will not save one. This is the one piece of intake discipline that is mechanically
           enforced rather than just practiced; sourcing itself stays a human judgment call informed by the
           four channels above, not something a screener generates automatically.
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Workflow states</h2>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          Every company sits in exactly one of three states. Investment Portfolio is real capital deployed.
+          Watched Pipeline is active candidates, manually ranked rather than auto-sorted by score alone, and
+          it also includes current holdings so they can be compared side by side against what is not yet
+          funded. Archived is anything no longer active, either evaluated and passed on or previously
+          invested and since exited, and every archived company carries a required, visible reason, not
+          just a status change with no record of why. All three live on the{" "}
+          <Link href="/" className="text-signal hover:underline">
+            homepage
+          </Link>
+          .
         </p>
       </section>
 
@@ -177,7 +210,7 @@ export default function MethodologyPage() {
       <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Confidence floor</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Before a candidate is promoted from the watched pipeline into the invested portfolio, its
+          Before a candidate is promoted from the Watched Pipeline into the Investment Portfolio, its
           confidence score is checked. Below 3 out of 5, a warning appears asking for explicit confirmation
           that the underlying data is solid enough to size real capital against. It is a soft flag, not a
           hard rule, the decision to proceed stays a human one.
@@ -200,27 +233,19 @@ export default function MethodologyPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Workflow states</h2>
-        <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Every company sits in exactly one of three states. Investment Portfolio is real capital deployed.
-          Watched Pipeline is active candidates, manually ranked rather than auto-sorted by score alone, and
-          it also includes current holdings so they can be compared side by side against what is not yet
-          funded. Archived is anything no longer active, either evaluated and passed on or previously
-          invested and since exited, and every archived company carries a required, visible reason, not
-          just a status change with no record of why.
-        </p>
-      </section>
-
-      <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Capital concentration
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          The Coverage map separates two different questions. Capital concentration is about real money:
-          what share of currently invested value sits in each AI category, and what share sits in a holding
-          with a disclosed relationship to a given named partner, weighted by each holding&apos;s current
-          position value, not a simple count of companies. A holding with several partners contributes its
-          full value to each one, since the position is genuinely exposed through every one of those
+          The{" "}
+          <Link href="/dashboard" className="text-signal hover:underline">
+            Coverage map
+          </Link>{" "}
+          separates two different questions. Capital concentration is about real money: what share of
+          currently invested value sits in each AI category, and what share sits in a holding with a
+          disclosed relationship to a given named partner, weighted by each holding&apos;s current position
+          value, not a simple count of companies. A holding with several partners contributes its full
+          value to each one, since the position is genuinely exposed through every one of those
           relationships at once, not divided across them. Research coverage, shown separately further down
           the same page, answers a different question: which parts of the taxonomy have been researched at
           all, independent of whether anything found there was ever funded.
@@ -239,7 +264,11 @@ export default function MethodologyPage() {
           already applied to a holding&apos;s own entry price, and compared against its live price today. The
           portfolio-level number weights each holding by its current position value. This is the explicit
           test of the standing goal: deep ecosystem intelligence should produce returns exceeding the broad
-          market, not just positive returns in isolation.
+          market, not just positive returns in isolation. Shown on the{" "}
+          <Link href="/scorecard" className="text-signal hover:underline">
+            Scorecard
+          </Link>
+          .
         </p>
       </section>
 
@@ -248,13 +277,17 @@ export default function MethodologyPage() {
           Validation: does the ranking actually work
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          The Scorecard tracks the Pearson correlation, separately, between composite and confidence on one
-          side and each stock&apos;s return since it was scored on the other, across every graded score on
-          record. A positive number for confidence means scores backed by more verified, primary-source data
-          have tended to outperform scores resting on thinner inputs. This is a deliberately strict
-          methodology: no correlation is shown until there are at least 20 graded scores averaging at least
-          30 days of tracking, since a correlation computed on too little data is noise dressed up as
-          signal. The system is built to measure whether it works, not to assume it does.
+          The{" "}
+          <Link href="/scorecard" className="text-signal hover:underline">
+            Scorecard
+          </Link>{" "}
+          tracks the Pearson correlation, separately, between composite and confidence on one side and each
+          stock&apos;s return since it was scored on the other, across every graded score on record. A
+          positive number for confidence means scores backed by more verified, primary-source data have
+          tended to outperform scores resting on thinner inputs. This is a deliberately strict methodology:
+          no correlation is shown until there are at least 20 graded scores averaging at least 30 days of
+          tracking, since a correlation computed on too little data is noise dressed up as signal. The
+          system is built to measure whether it works, not to assume it does.
         </p>
       </section>
 
@@ -267,7 +300,17 @@ export default function MethodologyPage() {
           the company&apos;s most recent 10-Q or 10-K is checked directly. Retail aggregator sites are not
           treated as a substitute for the primary filing. Where a figure genuinely cannot be confirmed even
           after checking, that is recorded explicitly as checked but not found, distinct from a field that
-          simply has not been looked at yet.
+          simply has not been looked at yet. The{" "}
+          <Link href="/audit" className="text-signal hover:underline">
+            Data quality
+          </Link>{" "}
+          page checks this mechanically where it can: that each composite score actually equals its
+          weighted dimensions within a small rounding tolerance, that an ownership trend is never set
+          without the percentage behind it, since a trend with no number is unverifiable, that core
+          financial fields are not silently missing, and that market cap snapshots are not going stale. It
+          catches arithmetic, internal inconsistency, and staleness, not whether a primary source was
+          genuinely checked, that part stays a matter of discipline, not something software can verify on
+          its own.
         </p>
       </section>
 
@@ -279,7 +322,11 @@ export default function MethodologyPage() {
           specific holding that it could plausibly change that holding&apos;s score, an explicit flag tied to
           that company until it is reviewed and dismissed. Most institutional research is supportive context
           rather than a trigger for a specific re-score, so this flag is intentionally rare, not a constant
-          signal.
+          signal. Logged on the{" "}
+          <Link href="/research" className="text-signal hover:underline">
+            Research digest
+          </Link>{" "}
+          page.
         </p>
       </section>
 
