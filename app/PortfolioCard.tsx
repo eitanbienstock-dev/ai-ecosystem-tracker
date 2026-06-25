@@ -43,6 +43,8 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
   const scoreDelta = (currentScore?.composite_score ?? 0) - (entryScoreVal?.composite_score ?? 0);
   const drift = currentWeight - effectiveTargetWeight;
   const weightFlagged = Math.abs(drift) >= 10;
+  const crossedCeiling =
+    (company.market_cap ?? 0) > 100_000_000_000 && !company.market_cap_exception;
   const underYear = (daysHeld ?? 0) < 365;
   const currentShares = company.shares_held ?? 0;
   const defaultPriceStr = (livePrice ?? company.entry_price ?? 0).toFixed(2);
@@ -156,13 +158,17 @@ export default function PortfolioCard({ data }: { data: PortfolioCardData }) {
         {scoreDelta <= -5 && <span className="badge bg-fall/15 text-fall">score down {scoreDelta}</span>}
         {scoreDelta >= 5 && <span className="badge bg-rise/15 text-rise">score up +{scoreDelta}</span>}
         {weightFlagged && <span className="badge bg-signal/15 text-signal">weight drift</span>}
+        {crossedCeiling && <span className="badge bg-signal/15 text-signal">over market cap ceiling</span>}
         {overdueCatalystCount > 0 && (
           <span className="badge bg-signal/15 text-signal">{overdueCatalystCount} catalyst overdue</span>
         )}
         {company.needs_review && <span className="badge bg-signal/15 text-signal">needs review</span>}
-        {!weightFlagged && overdueCatalystCount === 0 && !company.needs_review && scoreDelta > -5 && scoreDelta < 5 && (
-          <span className="text-xs text-muted">no flags</span>
-        )}
+        {!weightFlagged &&
+          !crossedCeiling &&
+          overdueCatalystCount === 0 &&
+          !company.needs_review &&
+          scoreDelta > -5 &&
+          scoreDelta < 5 && <span className="text-xs text-muted">no flags</span>}
       </div>
 
       {open && (

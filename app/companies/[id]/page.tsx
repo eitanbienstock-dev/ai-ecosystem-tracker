@@ -44,6 +44,9 @@ export default async function CompanyDetailPage({
 
   const liveCap = c.ticker ? await getLiveMarketCap(c.ticker) : null;
   const livePrice = c.ticker ? await getLivePrice(c.ticker) : null;
+  const effectiveMarketCap = liveCap?.marketCap ?? c.market_cap ?? null;
+  const crossedCeiling =
+    effectiveMarketCap !== null && effectiveMarketCap > 100_000_000_000 && !c.market_cap_exception;
 
   const { data: partnerships } = await supabase
     .from("partnerships")
@@ -159,6 +162,14 @@ export default async function CompanyDetailPage({
         <div className="mb-8 max-w-3xl">
           <p className="text-sm leading-relaxed text-[#cfd1d5]">{c.description}</p>
           <p className="mt-1 text-[11px] text-muted">Last reviewed {c.last_reviewed_at ? formatDate(c.last_reviewed_at) : "never"}</p>
+          {crossedCeiling && (
+            <p className="mt-2 rounded bg-signal/10 p-2 text-xs text-signal">
+              Market cap has grown to {fmtMarketCap(effectiveMarketCap)}, above the fund&apos;s normal 100
+              billion dollar ceiling. This holding was not added as a deliberate exception, the ceiling was
+              crossed after entry. Not automatically actioned, just worth a conscious look at whether the
+              original under-coverage rationale still holds.
+            </p>
+          )}
         </div>
       )}
 

@@ -55,12 +55,19 @@ export default function MethodologyPage() {
           liquid. Nebius Group, a Dutch entity trading on Nasdaq, is a working example. The portfolio is
           concentrated by design, around ten names, not a diversified basket, and the thesis is that deep
           ecosystem intelligence on AI stack dependencies produces better risk-adjusted returns than
-          passive AI exposure. The 100 billion dollar ceiling is checked at intake; what happens if a
-          holding grows past it afterward is an open question the system does not yet have a stated answer
-          to. Exceptions to the ceiling can be made at intake itself, but only deliberately and visibly, not
-          quietly: Marvell Technology was added at roughly 244 billion dollars specifically because its
-          strategic position in AI custom silicon and optical interconnect was judged to outweigh the size
-          consideration, a recorded, one-off override of the screen rather than a change to the screen.
+          passive AI exposure. The 100 billion dollar ceiling is checked at intake. If an existing holding
+          grows past it afterward, nothing is automatically actioned, selling a winner on a schedule set by
+          its own re-rating rather than by anything about the business changing would be close to
+          self-sabotage for a concentrated, conviction-driven book. Instead, a visible flag appears on the
+          company page and on its portfolio card once market cap crosses the ceiling without having been a
+          deliberate intake exception, the same pattern already used for weight drift and overdue
+          catalysts: nothing forced, just a conscious prompt to ask whether the original under-coverage
+          rationale still holds. Exceptions to the ceiling can also be made at intake itself, but only
+          deliberately and visibly, not quietly: Marvell Technology was added at roughly 244 billion
+          dollars specifically because its strategic position in AI custom silicon and optical interconnect
+          was judged to outweigh the size consideration, a recorded, one-off override of the screen rather
+          than a change to the screen, and is excluded from the crossing flag since it was never under the
+          ceiling to begin with.
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {CATEGORY_ORDER.map((cat) => (

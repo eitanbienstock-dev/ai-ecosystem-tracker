@@ -20,6 +20,7 @@ export type Company = {
   market_cap: number | null;
   market_cap_updated_at: string | null;
   market_cap_source: string | null;
+  market_cap_exception: boolean;
   research_status: string;
   pipeline_order: number | null;
   pending_digest_flags: string[] | null;
