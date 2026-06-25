@@ -51,6 +51,8 @@ export type Company = {
   entry_price: number | null;
   benchmark_ticker: string | null;
   benchmark_price_at_entry: number | null;
+  sector_benchmark_ticker: string | null;
+  sector_benchmark_price_at_entry: number | null;
   exit_date: string | null;
   exit_price: number | null;
   target_weight_override_pct: number | null;

@@ -52,13 +52,35 @@ export default async function ScorecardPage() {
       if (p) liveBenchmarkByTicker.set(t, p.price);
     })
   );
+  const sectorBenchmarkTickers = Array.from(
+    new Set(invested.map((c) => c.sector_benchmark_ticker).filter(Boolean) as string[])
+  );
+  const liveSectorBenchmarkByTicker = new Map<string, number>();
+  await Promise.all(
+    sectorBenchmarkTickers.map(async (t) => {
+      const p = await getLivePrice(t);
+      if (p) liveSectorBenchmarkByTicker.set(t, p.price);
+    })
+  );
 
   const benchmarkRows = invested.map((c) => {
     const livePrice = c.ticker ? liveByTicker.get(c.ticker) ?? null : null;
     const liveBenchmarkPrice = c.benchmark_ticker ? liveBenchmarkByTicker.get(c.benchmark_ticker) ?? null : null;
-    const { holdingReturnPct, benchmarkReturnPct, excessPct } = computeBenchmarkRow(c, livePrice, liveBenchmarkPrice);
+    const liveSectorBenchmarkPrice = c.sector_benchmark_ticker
+      ? liveSectorBenchmarkByTicker.get(c.sector_benchmark_ticker) ?? null
+      : null;
+    const { holdingReturnPct, benchmarkReturnPct, excessPct, sectorBenchmarkReturnPct, sectorExcessPct } =
+      computeBenchmarkRow(c, livePrice, liveBenchmarkPrice, liveSectorBenchmarkPrice);
     const value = (c.shares_held ?? 0) * (livePrice ?? c.entry_price ?? 0);
-    return { company: c, holdingReturnPct, benchmarkReturnPct, excessPct, value };
+    return {
+      company: c,
+      holdingReturnPct,
+      benchmarkReturnPct,
+      excessPct,
+      sectorBenchmarkReturnPct,
+      sectorExcessPct,
+      value,
+    };
   });
   const totalBenchmarkableValue = benchmarkRows
     .filter((r) => r.excessPct !== null)
@@ -74,6 +96,15 @@ export default async function ScorecardPage() {
       ? benchmarkRows
           .filter((r) => r.excessPct !== null)
           .reduce((a, r) => a + (r.benchmarkReturnPct ?? 0) * (r.value / totalBenchmarkableValue), 0)
+      : null;
+  const totalSectorBenchmarkableValue = benchmarkRows
+    .filter((r) => r.sectorExcessPct !== null)
+    .reduce((a, r) => a + r.value, 0);
+  const weightedSectorBenchmarkReturn =
+    totalSectorBenchmarkableValue > 0
+      ? benchmarkRows
+          .filter((r) => r.sectorExcessPct !== null)
+          .reduce((a, r) => a + (r.sectorBenchmarkReturnPct ?? 0) * (r.value / totalSectorBenchmarkableValue), 0)
       : null;
 
   const allScores = (scores ?? []) as Score[];
@@ -186,7 +217,13 @@ export default async function ScorecardPage() {
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-muted">Excess</p>
+                <p className="text-[10px] text-muted">SOXX semiconductor index, same windows</p>
+                <p className="font-mono text-2xl font-bold text-muted">
+                  {weightedSectorBenchmarkReturn !== null ? `${weightedSectorBenchmarkReturn >= 0 ? "+" : ""}${weightedSectorBenchmarkReturn.toFixed(1)}%` : "not yet available"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted">Excess vs S&amp;P 500</p>
                 <p
                   className={`font-mono text-2xl font-bold ${
                     weightedHoldingReturn !== null && weightedBenchmarkReturn !== null
@@ -198,6 +235,22 @@ export default async function ScorecardPage() {
                 >
                   {weightedHoldingReturn !== null && weightedBenchmarkReturn !== null
                     ? `${weightedHoldingReturn - weightedBenchmarkReturn >= 0 ? "+" : ""}${(weightedHoldingReturn - weightedBenchmarkReturn).toFixed(1)}pts`
+                    : "not yet available"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted">Excess vs sector</p>
+                <p
+                  className={`font-mono text-2xl font-bold ${
+                    weightedHoldingReturn !== null && weightedSectorBenchmarkReturn !== null
+                      ? weightedHoldingReturn - weightedSectorBenchmarkReturn >= 0
+                        ? "text-rise"
+                        : "text-fall"
+                      : "text-muted"
+                  }`}
+                >
+                  {weightedHoldingReturn !== null && weightedSectorBenchmarkReturn !== null
+                    ? `${weightedHoldingReturn - weightedSectorBenchmarkReturn >= 0 ? "+" : ""}${(weightedHoldingReturn - weightedSectorBenchmarkReturn).toFixed(1)}pts`
                     : "not yet available"}
                 </p>
               </div>
@@ -215,13 +268,24 @@ export default async function ScorecardPage() {
                       {" "}({r.excessPct >= 0 ? "+" : ""}{r.excessPct.toFixed(1)}pts)
                     </span>
                   )}
+                  {" / vs "}
+                  {r.company.sector_benchmark_ticker ?? "sector"}{" "}
+                  {r.sectorBenchmarkReturnPct !== null ? `${r.sectorBenchmarkReturnPct >= 0 ? "+" : ""}${r.sectorBenchmarkReturnPct.toFixed(1)}%` : "not yet available"}
+                  {r.sectorExcessPct !== null && (
+                    <span className={r.sectorExcessPct >= 0 ? "text-rise" : "text-fall"}>
+                      {" "}({r.sectorExcessPct >= 0 ? "+" : ""}{r.sectorExcessPct.toFixed(1)}pts)
+                    </span>
+                  )}
                 </p>
               ))}
             </div>
             <p className="mt-3 text-[11px] text-muted">
-              Each holding is compared against the S&amp;P 500 over the same window, from that holding&apos;s own
-              entry date to now, not a shared calendar period, since capital was deployed on different dates.
-              The aggregate weights each holding by its current position value.
+              Each holding is compared against both the S&amp;P 500 and the SOXX semiconductor index over the
+              same window, from that holding&apos;s own entry date to now, not a shared calendar period, since
+              capital was deployed on different dates. The sector benchmark exists because a concentrated AI
+              infrastructure book can beat the broad market just by being in a hot sector during a sector
+              boom, that alone is not evidence of selection skill. Beating SOXX specifically is a more honest
+              signal. The aggregate weights each holding by its current position value.
             </p>
           </>
         )}

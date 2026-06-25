@@ -64,8 +64,15 @@ export function daysHeld(entryDate: string | null): number | null {
 export function computeBenchmarkRow(
   c: Company,
   livePrice: number | null,
-  liveBenchmarkPrice: number | null
-): { holdingReturnPct: number | null; benchmarkReturnPct: number | null; excessPct: number | null } {
+  liveBenchmarkPrice: number | null,
+  liveSectorBenchmarkPrice: number | null = null
+): {
+  holdingReturnPct: number | null;
+  benchmarkReturnPct: number | null;
+  excessPct: number | null;
+  sectorBenchmarkReturnPct: number | null;
+  sectorExcessPct: number | null;
+} {
   const holdingReturnPct =
     c.entry_price && livePrice ? ((livePrice - c.entry_price) / c.entry_price) * 100 : null;
   const benchmarkReturnPct =
@@ -74,5 +81,13 @@ export function computeBenchmarkRow(
       : null;
   const excessPct =
     holdingReturnPct !== null && benchmarkReturnPct !== null ? holdingReturnPct - benchmarkReturnPct : null;
-  return { holdingReturnPct, benchmarkReturnPct, excessPct };
+  const sectorBenchmarkReturnPct =
+    c.sector_benchmark_price_at_entry && liveSectorBenchmarkPrice
+      ? ((liveSectorBenchmarkPrice - c.sector_benchmark_price_at_entry) / c.sector_benchmark_price_at_entry) * 100
+      : null;
+  const sectorExcessPct =
+    holdingReturnPct !== null && sectorBenchmarkReturnPct !== null
+      ? holdingReturnPct - sectorBenchmarkReturnPct
+      : null;
+  return { holdingReturnPct, benchmarkReturnPct, excessPct, sectorBenchmarkReturnPct, sectorExcessPct };
 }

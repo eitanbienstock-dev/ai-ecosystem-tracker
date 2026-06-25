@@ -263,14 +263,20 @@ export default function MethodologyPage() {
           Benchmark comparison
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Each invested holding is compared against the S&amp;P 500 over the same window, from that
-          holding&apos;s own entry date to now, not a shared calendar period, since capital was deployed on
-          different dates and a single shared window would misrepresent the comparison for holdings entered
-          at different times. The benchmark price is captured at the moment of entry, the same discipline
-          already applied to a holding&apos;s own entry price, and compared against its live price today. The
-          portfolio-level number weights each holding by its current position value. This is the explicit
-          test of the standing goal: deep ecosystem intelligence should produce returns exceeding the broad
-          market, not just positive returns in isolation. Shown on the{" "}
+          Each invested holding is compared against both the S&amp;P 500 and the SOXX semiconductor index
+          over the same window, from that holding&apos;s own entry date to now, not a shared calendar
+          period, since capital was deployed on different dates and a single shared window would
+          misrepresent the comparison for holdings entered at different times. Both benchmark prices are
+          captured at the moment of entry, the same discipline already applied to a holding&apos;s own
+          entry price, and compared against its live price today. The sector benchmark exists because this
+          book is deliberately concentrated in AI infrastructure, semiconductors most of all, and beating
+          the S&amp;P 500 during an AI-driven semiconductor boom proves very little about selection skill
+          on its own. Beating SOXX specifically, the sector that is actually driving most of the book's
+          concentration, is the more honest test. The portfolio-level number weights each holding by its
+          current position value. This is the explicit test of the standing goal: deep ecosystem
+          intelligence should produce returns exceeding the broad market and the sector it sits in, not
+          just positive returns in isolation, and not just a sector tailwind mistaken for skill. Shown on
+          the{" "}
           <Link href="/scorecard" className="text-signal hover:underline">
             Scorecard
           </Link>
