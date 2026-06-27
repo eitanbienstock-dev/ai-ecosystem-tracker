@@ -22,7 +22,7 @@ const DIMENSIONS = [
   {
     label: "Management & ownership",
     weight: 15,
-    def: "Insider and institutional ownership trends, whether AI-related claims hold up under scrutiny, and whether compensation is tied to AI-specific outcomes.",
+    def: "Insider and institutional ownership trends, whether AI-related claims hold up under scrutiny, and the insider transaction signal from Form 4 filings: net buying, net selling, or mixed/neutral, where open-market purchases are the strongest management-conviction signal available since they are rare and discretionary.",
   },
   {
     label: "Catalyst clarity",
@@ -188,6 +188,59 @@ export default function MethodologyPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
+          Leverage assessment
+        </h2>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Each company is assessed on a durability axis separate from the composite score: once things
+          settle, is this hard to displace, or could a customer or partner switch to a competitor without
+          much pain? Every company receives one of three values.
+        </p>
+        <div className="mb-3 overflow-hidden rounded border border-line">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
+                <th className="px-4 py-2.5">Value</th>
+                <th className="px-4 py-2.5">Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-line bg-panel/40">
+                <td className="px-4 py-3 font-medium text-[#e7e8ea]">Hard to replace</td>
+                <td className="px-4 py-3 text-[#cfd1d5]">
+                  Real switching costs exist. Once embedded, a customer or partner would find it expensive
+                  or slow to move to a competitor.
+                </td>
+              </tr>
+              <tr className="border-b border-line bg-panel/40">
+                <td className="px-4 py-3 font-medium text-[#e7e8ea]">Commoditized</td>
+                <td className="px-4 py-3 text-[#cfd1d5]">
+                  Limited switching costs. A customer or partner could move to a competitor without much
+                  friction.
+                </td>
+              </tr>
+              <tr className="border-b border-line bg-panel/40 last:border-0">
+                <td className="px-4 py-3 font-medium text-[#e7e8ea]">Contested</td>
+                <td className="px-4 py-3 text-[#cfd1d5]">
+                  Assessed and genuinely balanced: real switching-cost signals alongside real displacement
+                  risk, evidence pointing both ways rather than not yet looked at.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          The{" "}
+          <Link href="/infrastructure" className="text-signal hover:underline">
+            AI Infrastructure Stack
+          </Link>{" "}
+          page is the conceptual lens for resolving leverage calls: a company&apos;s leverage is assessed by
+          where it sits in the stack and whether structural power accrues to its node or flows up or
+          downstream to suppliers and customers.
+        </p>
       </section>
 
       <section className="mb-8">
