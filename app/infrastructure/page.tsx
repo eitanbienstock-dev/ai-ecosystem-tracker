@@ -73,9 +73,7 @@ export default async function InfrastructurePage() {
   return (
     <div className="-mx-6 -my-8">
       <script
-        id="stack-company-data"
-        type="application/json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(companies) }}
+        dangerouslySetInnerHTML={{ __html: 'window.__stackCompanies=' + JSON.stringify(companies) + ';' }}
       />
       <iframe
         src="/ai-infrastructure-stack.html"
