@@ -134,6 +134,16 @@
       </ul>
     </div>
     <button class="clear-btn" id="clearTrace" style="display:none;" type="button">&#10005; Clear</button>
+    <div style="width:1px;height:22px;background:var(--hairline);flex-shrink:0;align-self:center;"></div>
+    <div class="flow-select-wrap" id="companySelectWrap">
+      <span class="flow-label">Company:</span>
+      <div class="flow-select" id="companySelect" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="flow-select-value" id="companySelectValue">Loading&hellip;</span>
+        <span class="flow-select-arrow">&#9662;</span>
+      </div>
+      <ul class="flow-dropdown" id="companyDropdown" role="listbox"></ul>
+    </div>
+    <button class="clear-btn" id="clearCompany" style="display:none;" type="button">&#10005; Clear</button>
   </div>
 
   <div class="detail" id="detail">
@@ -791,6 +801,20 @@
   if(window.ResizeObserver) new ResizeObserver(scheduleDraw).observe(diagram);
   window.addEventListener('load',()=>draw());
   draw(); setTimeout(draw,250);
+
+  const NODE_NAMES = {nvidia:'Merchant GPU (NVIDIA)',amd:'Merchant GPU (AMD)',asics:'Custom ASICs',tsmc:'Advanced Foundry (TSMC)',broadcom:'ASIC Co-design (Broadcom & Marvell)',intel:'Alternative Foundry (Intel)',hbm:'HBM Memory',networking:'AI Networking fabric',power:'Power & Energy',hyperscalers:'Hyperscalers',neoclouds:'Neoclouds',spacex:'SpaceX / xAI',enterprises:'Enterprise demand',ailabs:'AI Labs',devtools:'Dev Tools & MLOps',sovereign:'Sovereign AI',frontier:'Frontier Models',openmodels:'Open Model Ecosystem'};
+  const companySelect=document.getElementById('companySelect'),companySelectVal=document.getElementById('companySelectValue'),companyDropdown=document.getElementById('companyDropdown'),clearCompanyBtn=document.getElementById('clearCompany');
+  let activeCompany=null,allCompanies=[];
+  function openCD(){companyDropdown.classList.add('open');companySelect.classList.add('open');companySelect.setAttribute('aria-expanded','true');}
+  function closeCD(){companyDropdown.classList.remove('open');companySelect.classList.remove('open');companySelect.setAttribute('aria-expanded','false');}
+  companySelect.addEventListener('click',e=>{e.stopPropagation();companyDropdown.classList.contains('open')?closeCD():openCD();});
+  companySelect.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();companyDropdown.classList.contains('open')?closeCD():openCD();}if(e.key==='Escape')closeCD();});
+  companyDropdown.addEventListener('click',e=>e.stopPropagation());
+  document.addEventListener('click',()=>closeCD());
+  clearCompanyBtn.addEventListener('click',()=>stopCompanyTrace());
+  async function loadCompanies(){try{const res=await fetch('/api/stack-companies');const data=await res.json();allCompanies=data.companies||[];buildCompanyDropdown();}catch(err){companySelectVal.textContent='Unavailable';}}
+  loadCompanies();
+
 })();
 </script>
 </body>
