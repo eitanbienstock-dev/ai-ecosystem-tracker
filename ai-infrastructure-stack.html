@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AI Infrastructure Stack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12141A;
+    --panel:#1B1F29;
+    --panel-2:#20242F;
+    --hairline:#2C313D;
+    --steel:#5C88B5;
+    --copper:#D98E3F;
+    --jade:#4A9E7C;
+    --rose:#C47A8A;
+    --violet:#7B6BB5;
+    --parchment:#ECE8DD;
+    --parchment-dim:rgba(236,232,221,0.45);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--ink); color:var(--parchment); font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif; -webkit-font-smoothing:antialiased; }
+  .page{ max-width:1040px; margin:0 auto; padding:28px 16px 60px; }
+  .kicker{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--copper); margin:0 0 10px; }
+  h1{ font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:clamp(20px,4vw,30px); line-height:1.15; margin:0 0 8px; letter-spacing:-0.01em; }
+  .sub{ font-size:14px; line-height:1.5; color:var(--parchment-dim); margin:0 0 16px; max-width:600px; }
+  /* Controls row */
+  .controls-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .flow-select-wrap{ position:relative; display:flex; align-items:center; gap:10px; }
+  .flow-label{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--parchment-dim); white-space:nowrap; }
+  .flow-select{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; background:var(--panel); border:1px solid var(--hairline); color:var(--parchment); padding:9px 36px 9px 14px; border-radius:7px; cursor:pointer; min-width:280px; user-select:none; position:relative; transition:border-color .2s; }
+  .flow-select:hover,.flow-select:focus{ border-color:var(--copper); outline:none; }
+  .flow-select.is-on{ border-color:var(--copper); background:rgba(217,142,63,0.1); color:var(--copper); }
+  .flow-select-arrow{ position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; font-size:10px; color:var(--parchment-dim); transition:transform .18s; }
+  .flow-select.open .flow-select-arrow{ transform:translateY(-50%) rotate(180deg); }
+  .flow-dropdown{ position:absolute; top:calc(100% + 4px); left:0; z-index:100; background:var(--panel-2); border:1px solid var(--hairline); border-radius:8px; padding:6px 0; min-width:320px; list-style:none; margin:0; box-shadow:0 8px 32px rgba(0,0,0,0.5); display:none; }
+  .flow-dropdown.open{ display:block; }
+  .flow-group-label{ font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--parchment-dim); padding:8px 14px 4px; pointer-events:none; }
+  .flow-group-label:not(:first-child){ border-top:1px solid var(--hairline); margin-top:4px; padding-top:10px; }
+  .flow-option{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--parchment); padding:8px 14px; cursor:pointer; transition:background .12s, color .12s; }
+  .flow-option:hover{ background:rgba(217,142,63,0.1); color:var(--copper); }
+  .flow-option.is-active{ color:var(--copper); background:rgba(217,142,63,0.08); }
+  .clear-btn{ font-family:'IBM Plex Mono',monospace; font-size:11px; background:transparent; border:1px solid var(--hairline); color:var(--parchment-dim); padding:9px 13px; border-radius:7px; cursor:pointer; transition:border-color .18s,color .18s; white-space:nowrap; }
+  .clear-btn:hover{ border-color:var(--rose); color:var(--rose); }
+  /* Detail panel */
+  .detail{ margin-bottom:20px; background:var(--panel-2); border:1px solid var(--hairline); border-radius:10px; padding:17px 20px; min-height:72px; transition:border-color .2s; }
+  .detail.has-content{ border-color:rgba(217,142,63,0.3); }
+  .detail-badge{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:0.1em; text-transform:uppercase; background:rgba(217,142,63,0.15); color:var(--copper); border-radius:4px; padding:2px 7px; margin-right:8px; vertical-align:middle; }
+  .detail-placeholder{ color:var(--parchment-dim); font-size:13px; margin:0; }
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; margin:18px 0 4px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--parchment-dim); }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:14px; height:3px; border-radius:2px; display:inline-block; }
+  .swatch.steel{ background:var(--steel); }
+  .swatch.copper{ background:var(--copper); }
+  .swatch.jade{ background:var(--jade); }
+  .swatch.violet{ background:var(--violet); }
+  .swatch.rose{ background:var(--rose); }
+  .swatch.neutral{ background:var(--parchment-dim); }
+  .swatch.dashed{ background:repeating-linear-gradient(90deg,var(--parchment-dim) 0 4px,transparent 4px 8px); }
+  /* Diagram */
+  .diagram{ position:relative; margin-top:22px; padding:6px 0; }
+  svg.lines{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; overflow:visible; }
+  .tier{ position:relative; z-index:2; display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin:0 auto 68px; }
+  .tier-label{ position:absolute; left:0; top:-20px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--parchment-dim); white-space:nowrap; }
+  /* Nodes */
+  .node{ position:relative; background:var(--panel); border:1px solid var(--hairline); border-radius:10px; padding:13px 15px; width:196px; cursor:pointer; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .25s ease; text-align:left; }
+  .node:hover{ transform:translateY(-2px); border-color:var(--parchment-dim); }
+  .node:focus-visible{ outline:2px solid var(--parchment); outline-offset:2px; }
+  .node h3{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; margin:6px 0 3px; letter-spacing:-0.01em; }
+  .node .meta{ font-size:11.5px; color:var(--parchment-dim); margin:0; line-height:1.4; }
+  .tag{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--parchment-dim); }
+  .tag.steel-tag{ color:var(--steel); }
+  .tag.copper-tag{ color:var(--copper); }
+  .tag.jade-tag{ color:var(--jade); }
+  .tag.rose-tag{ color:var(--rose); }
+  .tag.violet-tag{ color:var(--violet); }
+  /* node variants */
+  .node.anchor{ border-color:rgba(217,142,63,0.35); box-shadow:none; }
+  .node.amd-node{ border-color:rgba(74,158,124,0.4); }
+  .node.asic-node{ border-color:var(--steel); border-style:dashed; }
+  .node.foundry-node{ border-color:rgba(236,232,221,0.18); background:rgba(27,31,41,0.6); }
+  .node.infra-node{ border-color:rgba(92,136,181,0.3); background:rgba(20,24,34,0.7); }
+  .node.power-node{ border-color:rgba(196,122,138,0.35); background:rgba(20,24,34,0.7); }
+  .node.hybrid{ border-color:rgba(217,142,63,0.3); background:linear-gradient(160deg,rgba(217,142,63,0.04),rgba(92,136,181,0.04)),var(--panel); }
+  .node.hybrid::before{ content:""; position:absolute; top:0; left:0; right:0; height:2px; border-radius:10px 10px 0 0; background:linear-gradient(90deg,rgba(92,136,181,0.5),rgba(217,142,63,0.5)); }
+  .node.model-node{ border-color:rgba(123,107,181,0.5); background:rgba(123,107,181,0.06); }
+  .node.sovereign-node{ border-color:rgba(74,158,124,0.45); border-style:dashed; background:rgba(74,158,124,0.05); }
+  .node.devtools-node{ border-color:rgba(196,122,138,0.35); background:rgba(196,122,138,0.05); }
+  .chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .chip{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; border:1px solid var(--hairline); border-radius:4px; padding:2px 6px; color:var(--parchment-dim); }
+  .orbit-note{ color:var(--copper); font-style:italic; font-size:10px; margin:6px 0 0; line-height:1.4; }
+  /* selection */
+  .node.is-active{ border-color:var(--copper) !important; border-style:solid !important; box-shadow:0 0 0 1px rgba(217,142,63,0.35); transform:translateY(-2px); }
+  .node.is-dim{ opacity:0.3; }
+  path.edge{ fill:none; stroke-width:1.4; transition:opacity .2s,stroke-width .2s; opacity:0.45; }
+  path.edge.is-active{ opacity:1; stroke-width:2.3; }
+  path.edge.is-dim{ opacity:0.08; }
+  path.edge.dashed{ stroke-dasharray:2 6; }
+  .flow-dot{ fill:var(--copper); opacity:0; }
+  .detail-placeholder{ color:var(--parchment-dim); font-size:13px; margin:0; }
+  .detail h4{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.05em; text-transform:uppercase; color:var(--copper); margin:0 0 8px; }
+  .detail p{ font-size:13.5px; line-height:1.55; margin:0 0 9px; color:var(--parchment); }
+  .detail ul{ margin:0; padding:0; list-style:none; }
+  .detail li{ font-size:12.5px; line-height:1.5; color:var(--parchment-dim); padding-left:14px; position:relative; margin-bottom:6px; }
+  .detail li::before{ content:"→"; position:absolute; left:0; top:0; color:var(--copper); }
+  @media(max-width:600px){ .node{ width:44%; min-width:136px; padding:10px 11px; } .tier{ gap:7px; margin-bottom:56px; } }
+  @media(prefers-reduced-motion:reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <p class="kicker">Dependency map &middot; AI infrastructure &middot; 2026</p>
+  <h1>The AI Infrastructure Stack</h1>
+  <p class="sub">Tap any block to trace its dependencies and value flows. The stack runs bottom to top: physical constraints at the base, demand at the top. Dashed lines show behavioural patterns rather than hard supply relationships.</p>
+  <div class="controls-row">
+    <div class="flow-select-wrap">
+      <span class="flow-label">Trace a flow:</span>
+      <div class="flow-select" id="flowSelect" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="flow-select-value" id="flowSelectValue">Select a flow&hellip;</span>
+        <span class="flow-select-arrow">&#9662;</span>
+      </div>
+      <ul class="flow-dropdown" id="flowDropdown" role="listbox">
+        <li class="flow-group-label">Infrastructure flows</li>
+        <li class="flow-option" data-trace="hybrid" role="option">Hybrid: train on neocloud, serve on hyperscaler</li>
+        <li class="flow-option" data-trace="lockin" role="option">Nvidia lock-in chain</li>
+        <li class="flow-option" data-trace="asicescape" role="option">Custom ASIC escape route</li>
+        <li class="flow-group-label">Strategic flows</li>
+        <li class="flow-option" data-trace="sovereign" role="option">Sovereign AI flow</li>
+        <li class="flow-option" data-trace="openmodel" role="option">Open model path</li>
+        <li class="flow-option" data-trace="deepseek" role="option">DeepSeek: first frontier model without Nvidia</li>
+      </ul>
+    </div>
+    <button class="clear-btn" id="clearTrace" style="display:none;" type="button">&#10005; Clear</button>
+    <div style="width:1px;height:22px;background:var(--hairline);flex-shrink:0;align-self:center;"></div>
+    <div class="flow-select-wrap" id="companySelectWrap">
+      <span class="flow-label">Company:</span>
+      <div class="flow-select" id="companySelect" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="flow-select-value" id="companySelectValue">Loading&hellip;</span>
+        <span class="flow-select-arrow">&#9662;</span>
+      </div>
+      <ul class="flow-dropdown" id="companyDropdown" role="listbox"></ul>
+    </div>
+    <button class="clear-btn" id="clearCompany" style="display:none;" type="button">&#10005; Clear</button>
+  </div>
+
+  <div class="detail" id="detail">
+    <p class="detail-placeholder">Tap any block to trace its dependencies and value flows through the stack.</p>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch violet"></span> Model layer</span>
+    <span><span class="swatch rose"></span> Dev tools / sovereign</span>
+    <span><span class="swatch steel"></span> Hyperscaler</span>
+    <span><span class="swatch copper"></span> Neocloud / merchant GPU</span>
+    <span><span class="swatch jade"></span> AMD / open challenger</span>
+    <span><span class="swatch neutral"></span> Foundry / captive</span>
+    <span><span class="swatch dashed"></span> Behavioural pattern</span>
+  </div>
+
+  <div class="diagram" id="diagram">
+    <svg class="lines" id="lines"></svg>
+
+    <!-- TIER 0: MODEL LAYER -->
+    <div class="tier tier-models" style="margin-top:30px;">
+      <span class="tier-label">Model Layer</span>
+      <div class="node model-node" data-id="frontier" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag violet-tag">Frontier closed models</span>
+        <h3>Frontier Labs</h3>
+        <div class="chips"><span class="chip">OpenAI</span><span class="chip">Anthropic</span><span class="chip">Google DeepMind</span><span class="chip">xAI/Grok</span></div>
+      </div>
+      <div class="node model-node" data-id="openmodels" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag violet-tag">Open weights</span>
+        <h3>Open Model Ecosystem</h3>
+        <div class="chips"><span class="chip">Meta Llama 4</span><span class="chip">Mistral</span><span class="chip">DeepSeek</span><span class="chip">Qwen</span></div>
+      </div>
+    </div>
+
+    <!-- TIER 0.5: DEV TOOLS + SOVEREIGN -->
+    <div class="tier tier-devtools" style="margin-top:30px;">
+      <span class="tier-label">Developer Tools &amp; Sovereign AI</span>
+      <div class="node devtools-node" data-id="devtools" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag rose-tag">MLOps / tooling</span>
+        <h3>Dev Tools &amp; MLOps</h3>
+        <div class="chips"><span class="chip">Hugging Face</span><span class="chip">Databricks</span><span class="chip">W&amp;B</span><span class="chip">LangChain</span></div>
+      </div>
+      <div class="node sovereign-node" data-id="sovereign" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag jade-tag">National programs &middot; $100B+ committed</span>
+        <h3>Sovereign AI</h3>
+        <div class="chips"><span class="chip">UAE G42</span><span class="chip">Saudi HUMAIN</span><span class="chip">EU Gigafactory</span><span class="chip">India / Japan</span></div>
+      </div>
+    </div>
+
+    <!-- TIER 1: DEMAND -->
+    <div class="tier tier-demand" style="margin-top:30px;">
+      <span class="tier-label">Demand</span>
+      <div class="node" data-id="enterprises" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag">Broad enterprise</span>
+        <h3>Enterprises &amp; Regulated</h3>
+        <p class="meta">Banks &middot; healthcare &middot; government</p>
+      </div>
+      <div class="node" data-id="ailabs" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag">Frontier compute demand</span>
+        <h3>AI Labs &amp; Model Devs</h3>
+        <p class="meta">OpenAI &middot; Anthropic &middot; Meta AI</p>
+      </div>
+    </div>
+
+    <!-- TIER 2: CLOUD SUPPLY -->
+    <div class="tier tier-supply" style="margin-top:30px;">
+      <span class="tier-label">Cloud Supply</span>
+      <div class="node cluster" data-id="hyperscalers" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag steel-tag">General purpose</span>
+        <h3>Hyperscalers</h3>
+        <div class="chips"><span class="chip">AWS</span><span class="chip">Azure</span><span class="chip">GCP</span><span class="chip">Oracle</span></div>
+      </div>
+      <div class="node cluster" data-id="neoclouds" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag copper-tag">AI-native</span>
+        <h3>Neoclouds</h3>
+        <div class="chips"><span class="chip">CoreWeave</span><span class="chip">Nebius</span><span class="chip">Lambda</span><span class="chip">Crusoe</span></div>
+      </div>
+      <div class="node hybrid" data-id="spacex" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag copper-tag">AI-native &middot; integrated</span>
+        <h3>SpaceX / xAI</h3>
+        <p class="meta">Colossus &middot; Memphis, TN</p>
+        <p class="orbit-note">Filed for 1M orbital data center satellites</p>
+      </div>
+    </div>
+
+    <!-- TIER 3: SILICON -->
+    <div class="tier tier-silicon" style="margin-top:30px;">
+      <span class="tier-label">Silicon</span>
+      <div class="node anchor" data-id="nvidia" tabindex="0" role="button" aria-pressed="false" title="Market anchor — tap to explore">
+        <span class="tag copper-tag">Merchant GPU &middot; ~70% share</span>
+        <h3>NVIDIA</h3>
+        <p class="meta">Blackwell GB200/300 &middot; Rubin H2 2026</p>
+        <p class="meta" style="margin-top:4px;">CUDA moat &middot; Spectrum-X networking</p>
+      </div>
+      <div class="node amd-node" data-id="amd" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag jade-tag">Merchant GPU &middot; ~5-7% share</span>
+        <h3>AMD</h3>
+        <p class="meta">MI300X &middot; MI350X &middot; MI400 H2 2026</p>
+        <p class="meta" style="margin-top:4px;">Memory edge &middot; ROCm closing gap</p>
+      </div>
+      <div class="node asic-node" data-id="asics" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag steel-tag">Captive custom ASICs</span>
+        <h3>Custom Silicon</h3>
+        <div class="chips"><span class="chip">TPU (Google)</span><span class="chip">Trainium (AWS)</span><span class="chip">Maia (Azure)</span><span class="chip">MTIA (Meta)</span></div>
+      </div>
+    </div>
+
+    <!-- TIER 4: FOUNDRY -->
+    <div class="tier tier-foundry" style="margin-top:30px;">
+      <span class="tier-label">Foundry</span>
+      <div class="node foundry-node" data-id="tsmc" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag">Fabrication &middot; ~92% advanced AI chips</span>
+        <h3>TSMC</h3>
+        <p class="meta">3nm &middot; 2nm &middot; Nvidia, AMD, all ASICs</p>
+      </div>
+      <div class="node foundry-node" data-id="broadcom" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag">ASIC co-design &middot; ~95% market</span>
+        <h3>Broadcom &amp; Marvell</h3>
+        <p class="meta">Co-design Google TPU, Trainium, Maia</p>
+      </div>
+      <div class="node foundry-node" data-id="intel" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag" style="color:#c0a060;">Challenger foundry &middot; US-based hedge</span>
+        <h3>Intel Foundry</h3>
+        <p class="meta">18A node &middot; Maia 2 contract &middot; Nvidia partnership</p>
+      </div>
+    </div>
+
+    <!-- TIER 5: PHYSICAL INFRASTRUCTURE -->
+    <div class="tier tier-infra" style="margin-top:30px; margin-bottom:10px;">
+      <span class="tier-label">Physical Infrastructure</span>
+      <div class="node infra-node" data-id="hbm" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag steel-tag">Memory &middot; sold out through 2026</span>
+        <h3>HBM Memory</h3>
+        <div class="chips"><span class="chip">SK Hynix 53%</span><span class="chip">Samsung 35%</span><span class="chip">Micron 11%</span></div>
+        <p class="meta" style="margin-top:5px;">HBM3E &rarr; HBM4 &middot; stacked inside every GPU/ASIC</p>
+      </div>
+      <div class="node infra-node" data-id="networking" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag steel-tag">Cluster fabric</span>
+        <h3>AI Networking</h3>
+        <div class="chips"><span class="chip">Nvidia InfiniBand/Spectrum</span><span class="chip">Arista</span><span class="chip">Cisco</span></div>
+        <p class="meta" style="margin-top:5px;">InfiniBand vs Ethernet &middot; gates cluster scale</p>
+      </div>
+      <div class="node power-node" data-id="power" tabindex="0" role="button" aria-pressed="false">
+        <span class="tag rose-tag">Physical constraint &middot; binding bottleneck</span>
+        <h3>Power &amp; Energy</h3>
+        <p class="meta">Grid utilities &middot; nuclear PPAs &middot; on-site gas</p>
+        <p class="meta" style="margin-top:3px;">49 GW US shortfall by 2028 &middot; shapes where data centers can exist</p>
+      </div>
+    </div>
+
+  </div><!-- /diagram -->
+
+</div>
+
+<script>
+(function(){
+  const diagram = document.getElementById('diagram');
+  const svg = document.getElementById('lines');
+  const detail = document.getElementById('detail');
+  const hybridBtn = document.getElementById('hybridToggle');
+  const nodes = Array.from(diagram.querySelectorAll('.node'));
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const nodeText = {
+    frontier: {
+      title: "Frontier Labs — OpenAI, Anthropic, Google DeepMind, xAI",
+      summary: "The model layer sitting above the infrastructure stack. These labs are simultaneously the biggest consumers of compute (training) and the primary source of value that justifies all the capex below them. OpenAI's GPT-5 family leads on enterprise breadth and developer adoption. Google DeepMind's Gemini has deep infrastructure advantages via TPUs and Google's data ecosystem. Anthropic (Claude) has carved an enterprise niche on safety and reliability. xAI's Grok is tied to SpaceX/xAI compute and the X platform data moat. All four are in an accelerating arms race on reasoning and agentic capability.",
+      links: [
+        "Hyperscalers: primary deployment platform for inference and serving once models ship; Anthropic is on AWS, OpenAI on Azure, Google on GCP.",
+        "Neoclouds: primary source of training compute, often under long-term contracts — OpenAI with CoreWeave ($11.9B), Anthropic with SpaceX/xAI ($1.25B/month).",
+        "Custom ASICs: Anthropic runs 400,000 Trainium2 chips under Project Rainier; OpenAI uses AMD as well as Nvidia.",
+        "Dev Tools: Hugging Face hosts open-weight model distributions; Databricks provides the data layer for fine-tuning pipelines.",
+        "Sovereign AI: national programs buy access to frontier models as part of bilateral deals — the UAE Stargate deal includes OpenAI, Saudi HUMAIN includes xAI."
+      ]
+    },
+    openmodels: {
+      title: "Open Model Ecosystem — Meta Llama 4, Mistral, DeepSeek, Qwen",
+      summary: "Open-weight models have become structurally important to the stack as a price and flexibility counterweight to closed frontier labs. Meta's Llama 4 supports a 10 million token context window and is freely deployable, making it the default for developers who want to avoid per-token API costs. DeepSeek V4 from China trains on Huawei Ascend silicon, demonstrating the first frontier-class model built entirely without Nvidia GPUs. Mistral anchors the European sovereign model effort. The open ecosystem increasingly runs on neoclouds and on sovereign AI compute rather than hyperscaler managed services.",
+      links: [
+        "Hyperscalers: offer managed hosting of open models (AWS Bedrock, Azure AI Studio, Google Vertex) for enterprises that want open weights without self-hosting.",
+        "Neoclouds: Together AI, Lambda and others built their business on hosting open-weight models at lower cost than hyperscalers.",
+        "Dev Tools: Hugging Face is the primary distribution hub for every open-weight model; it hosts over 2 million models.",
+        "Sovereign AI: national programs prefer open-weight models they can fine-tune on local data and run in their own data centers.",
+        "Nvidia: DeepSeek's Huawei Ascend path is the first credible signal that Nvidia's training monopoly is not permanent in all geographies."
+      ]
+    },
+    devtools: {
+      title: "Developer Tools & MLOps",
+      summary: "The tooling layer between the model and the infrastructure. Hugging Face has become the GitHub of machine learning, hosting over 2 million models and serving as the default distribution channel for open-weight models. Databricks (valued at over $100 billion after its September 2025 raise) controls the enterprise data layer and increasingly owns the fine-tuning and agentic pipeline through Mosaic ML and MLflow. Weights & Biases dominates experiment tracking across research labs and production teams. LangChain remains the most widely used library for LLM application orchestration despite complexity criticisms. Anthropic's Model Context Protocol (MCP) crossed 97 million installs in March 2026 and was donated to the Linux Foundation's Agentic AI Foundation.",
+      links: [
+        "Frontier Labs: Hugging Face distributes open-weight models; W&B tracks training runs for labs of all sizes; MCP connects agents to external tools.",
+        "Open Models: Hugging Face is the primary hub; Databricks provides the data infrastructure for fine-tuning Llama, Mistral and others.",
+        "Hyperscalers: SageMaker, Vertex AI and Azure ML compete directly with standalone MLOps tools for enterprise data science workflows.",
+        "AI Labs: Databricks' data layer and W&B's experiment tracking are used across frontier labs and startups alike.",
+        "Enterprises: the MLOps stack is what enterprises actually interact with when deploying AI; Databricks and SageMaker dominate regulated industries."
+      ]
+    },
+    sovereign: {
+      title: "Sovereign AI — UAE, Saudi Arabia, EU, India, Japan",
+      summary: "Every G20 government now has a sovereign AI program. Global sovereign AI spending is projected to surpass $100 billion in 2026. The UAE and Japan alone account for over two thirds of all disclosed sovereign AI investment. The playbook is consistent: a national fund, a cloud or telco partner, an Nvidia GPU allocation negotiated bilaterally, and a data sovereignty clause. Saudi Arabia's HUMAIN (Public Investment Fund) is building 2,200 MW of AI data center capacity. The UAE's Stargate cluster (1 GW, backed by G42, OpenAI, Oracle, Cisco, Nvidia, SoftBank) is the region's single largest facility. The EU has mobilised €20 billion for AI Gigafactories of roughly 100,000 chips each. India is Tier 1 under US export controls, giving it unrestricted GPU access and structural advantage over Gulf peers.",
+      links: [
+        "Nvidia: supplies GPUs for 52% of all tracked sovereign infrastructure projects; the Saudi and UAE deals required government-to-government export license negotiations.",
+        "Hyperscalers: hyperscalers operate sovereign cloud regions (AWS Saudi, Azure UAE, Google) under local data residency requirements; they are simultaneous partners and competitors to sovereign programs.",
+        "Frontier Labs: OpenAI is in the UAE Stargate deal; xAI/SpaceX is building a 500MW data center in Saudi Arabia under HUMAIN.",
+        "Open Models: sovereign programs strongly prefer open-weight models they can fine-tune on local language data and control entirely.",
+        "Power: Gulf states have energy abundance but face thermal management challenges (45°C ambient); EU gigafactories face double US electricity prices."
+      ]
+    },
+    enterprises: {
+      title: "Enterprises & Regulated Industries",
+      summary: "Enterprises stay largely inside the hyperscaler ecosystem because of switching cost: egress fees, ingress fees, compliance certifications, and existing integrations lock most regulated customers into AWS, Azure or GCP. They access frontier models via API (OpenAI on Azure, Claude on AWS Bedrock) and open models via managed hosting on the same platforms. The sovereign AI wave is beginning to create a third path for regulated industries in regions with data residency requirements.",
+      links: [
+        "Hyperscalers: supply the managed services, compliance and global footprint enterprises depend on.",
+        "Frontier Labs: enterprises access GPT-5 via Azure OpenAI, Claude via AWS Bedrock, Gemini via Vertex AI.",
+        "Dev Tools: Databricks and SageMaker are the primary MLOps platforms for enterprise AI in production.",
+        "Sovereign AI: enterprises in regulated markets (banking, healthcare, government) in sovereign AI regions increasingly face local data residency mandates that shape which cloud and model they can use."
+      ]
+    },
+    ailabs: {
+      title: "AI Labs & Model Developers",
+      summary: "AI labs are the most silicon-hungry customer in the stack and the most diversified. They train on neoclouds and hyperscaler custom silicon, commit to AMD roadmap deals, and lease from SpaceX/xAI. Once a model ships, inference typically moves to hyperscaler infrastructure for global reach. They also shape the dev tools layer through open protocols like MCP and open-weight model releases.",
+      links: [
+        "Nvidia: still the primary training GPU; CUDA ecosystem is hard to leave for frontier model work.",
+        "AMD: OpenAI took a stake in AMD and committed to up to 6 GW of MI400 capacity; Anthropic uses Trainium.",
+        "Custom ASICs: Anthropic has 400,000 Trainium2 chips under Project Rainier with AWS.",
+        "Neoclouds: source of bare-metal training capacity on multi-year contracts (CoreWeave/OpenAI $11.9B).",
+        "Hyperscalers: destination for inference and serving once a model ships.",
+        "SpaceX/xAI: Anthropic leases roughly $1.25 billion of compute a month from Colossus."
+      ]
+    },
+    hyperscalers: {
+      title: "Hyperscalers",
+      summary: "AWS, Azure, GCP and Oracle dominate broad enterprise demand and are simultaneously Nvidia's biggest customers and its most serious long-term competitive threat. They build custom silicon to reduce Nvidia dependency on predictable inference workloads, lease neocloud capacity when their own GPU allocation falls short, and operate sovereign cloud regions under local data residency rules. They are the distribution layer for frontier models to enterprises.",
+      links: [
+        "Nvidia: broad chip supply but not always first allocation; custom ASICs are eating inference share.",
+        "AMD: Azure runs MI300X for Copilot; AWS uses Trainium3 (which Marvell co-designed) at scale.",
+        "Custom ASICs: each hyperscaler's captive chip reduces Nvidia spend on high-volume, predictable workloads.",
+        "Neoclouds: lease capacity from them when demand outpaces own build speed; also compete for training workloads.",
+        "Sovereign AI: operate sovereign cloud regions under local data residency rules; simultaneously compete with national programs.",
+        "Frontier Labs: AWS hosts Anthropic (Bedrock), Azure hosts OpenAI, GCP hosts Google DeepMind models.",
+        "Dev Tools: SageMaker, Vertex AI, Azure ML compete directly with standalone MLOps vendors."
+      ]
+    },
+    neoclouds: {
+      title: "Neoclouds",
+      summary: "CoreWeave, Nebius, Lambda Labs and Crusoe are AI-native, GPU-first providers. CoreWeave leads, having raised over $13 billion, anchored by its $11.9 billion OpenAI contract. They run mostly Nvidia hardware; AMD instances arrive 3-6 months after hyperscaler rollout. Open-weight model hosting (Together AI, Fireworks, RunPod) is a distinct neocloud sub-category targeting developers who want cheaper inference than hyperscaler managed APIs.",
+      links: [
+        "Nvidia: priority allocation of newest GPUs, the primary draw for AI lab training workloads.",
+        "AMD: instances available but typically several months behind hyperscaler rollout.",
+        "Frontier Labs: core training customer base — OpenAI/CoreWeave, Anthropic/SpaceX/xAI.",
+        "Open Models: Together AI, Lambda, Fireworks host open-weight model inference at lower cost than hyperscaler managed services.",
+        "Hyperscalers: lease excess capacity to them; also compete head-to-head for training workloads.",
+        "SpaceX/xAI: newer peer in this category, born from an AI lab rather than built as a cloud from day one."
+      ]
+    },
+    spacex: {
+      title: "SpaceX / xAI",
+      summary: "In February 2026 SpaceX acquired xAI, folding the Colossus data centers in Memphis into SpaceX and turning spare GPU capacity into a product. The same neocloud playbook but funded by a far larger balance sheet. Anthropic leases $1.25 billion of compute a month; Google leases roughly 110,000 GPUs for $920 million a month. Long term, SpaceX has filed with the FCC for up to 1 million solar-powered satellite data centers in orbit — fundamentally a power play to escape terrestrial grid constraints.",
+      links: [
+        "AI labs: Anthropic leases roughly $1.25 billion of compute a month, three-year deal.",
+        "Hyperscalers: Google leases about 110,000 GPUs for $920 million a month as bridge capacity for Gemini Enterprise.",
+        "Sovereign AI: HUMAIN (Saudi) is building a 500MW data center with xAI.",
+        "Nvidia: Colossus runs Nvidia H100/H200; likely early Blackwell/Rubin customer.",
+        "Power: orbital compute strategy eliminates terrestrial grid constraints via solar; AI1 satellite unveiled June 2026."
+      ]
+    },
+    nvidia: {
+      title: "NVIDIA",
+      summary: "Dominant merchant GPU vendor at roughly 70% AI chip market share. The real moat is CUDA, the software ecosystem every major AI framework is built on. Nvidia strategically allocates its newest GPUs to neoclouds ahead of hyperscalers, and has expanded into networking (Spectrum-X Ethernet overtook Arista and Cisco in data center switch share in 2025, up 647% YoY). The Rubin architecture ships H2 2026.",
+      links: [
+        "Hyperscalers: broad but not priority chip supply; Nvidia uses allocation policy to keep hyperscalers dependent.",
+        "Neoclouds: priority GB200/300 allocation, used to seed the market and hedge against hyperscaler custom silicon.",
+        "AI labs: still the primary training GPU despite AMD and Trainium inroads.",
+        "HBM Memory: SK Hynix supplies ~70% of Nvidia's HBM; co-packaged at TSMC via CoWoS.",
+        "Networking: Spectrum-X Ethernet and InfiniBand are a second, growing form of Nvidia lock-in beyond CUDA.",
+        "TSMC: primary GPU fabricator; Intel Foundry partnership adds a US-based option.",
+        "Intel Foundry: foundry partnership announced September 2025."
+      ]
+    },
+    amd: {
+      title: "AMD Instinct",
+      summary: "The only credible merchant GPU alternative to Nvidia at roughly 5-7% AI chip market share. AMD's edge is memory: MI300X and MI350X carry more HBM at lower cost. The MI400 on TSMC 2nm (H2 2026) has commitments from Meta and OpenAI. ROCm is closing but has not matched CUDA's ecosystem depth. Samsung is AMD's primary HBM4 partner for the MI455X generation.",
+      links: [
+        "Hyperscalers: Azure runs MI300X for Copilot workloads; AWS uses AMD for some inference.",
+        "AI labs: OpenAI took up to a 10% stake and committed to 6 GW of MI400 capacity.",
+        "Neoclouds: instances available but typically 3-6 months after hyperscaler allocation.",
+        "HBM Memory: Samsung locked in as primary HBM4 partner for MI455X.",
+        "TSMC: MI400 on TSMC 2nm, AMD's most advanced process node.",
+        "Nvidia: competing for the same training and inference budgets; CUDA lock-in is the primary barrier."
+      ]
+    },
+    asics: {
+      title: "Custom Captive ASICs",
+      summary: "Every major hyperscaler designs its own AI silicon, captive to the builder and unavailable externally. Google's TPU Ironwood handles over 60% of GCP's internal AI inference. AWS Trainium3 (3nm, GA December 2025) is used by Anthropic and OpenAI. Microsoft Maia 200 (January 2026) targets Azure OpenAI inference. Meta MTIA handles recommendation models. Custom ASIC shipments are projected to grow 44.6% in 2026 versus 16.1% for merchant GPUs.",
+      links: [
+        "Hyperscalers: each ASIC is an internal cost weapon, reducing Nvidia spend on high-volume predictable workloads.",
+        "Broadcom and Marvell: co-design partners controlling roughly 95% of the custom ASIC market.",
+        "TSMC: primary fabricator for all four chips; Microsoft Maia 2 is the exception moving to Intel Foundry 18A.",
+        "Intel Foundry: Maia 2 is contracted to Intel 18A, the first major hyperscaler ASIC breaking TSMC's monopoly.",
+        "AI labs: Anthropic has 400,000 Trainium2 chips under Project Rainier with AWS."
+      ]
+    },
+    tsmc: {
+      title: "TSMC",
+      summary: "Fabricates roughly 92% of all advanced AI chips at 7nm and below — every Nvidia GPU, every AMD GPU, and every major hyperscaler ASIC. The single largest geopolitical concentration risk in the entire stack. CoWoS advanced packaging (used to co-stack HBM onto GPU dies) is oversubscribed through 2026, making TSMC a bottleneck even beyond wafer capacity.",
+      links: [
+        "Nvidia: sole fabricator of Blackwell and Rubin GPU generations.",
+        "AMD: fabricating MI400 on 2nm, AMD's most advanced node yet.",
+        "Custom ASICs: Google TPU, AWS Trainium, Microsoft Maia 200, Meta MTIA all manufactured here.",
+        "HBM Memory: CoWoS packaging at TSMC is where HBM stacks are bonded to GPU and ASIC dies.",
+        "Intel Foundry: the only credible alternative for advanced AI chips; Maia 2 contract is the first real test."
+      ]
+    },
+    broadcom: {
+      title: "Broadcom & Marvell",
+      summary: "The hidden infrastructure of the custom ASIC wave. Together they control roughly 95% of the custom AI ASIC co-design market. Broadcom reported $8.4 billion in AI semiconductor revenue in Q1 FY2026, up 106% YoY. Marvell projects up to $11 billion in AI ASIC revenue for 2026. They design the chips that hyperscalers put their names on.",
+      links: [
+        "Hyperscalers: Broadcom co-designs Google TPUs; Marvell partners with Amazon on Trainium and Microsoft on Maia.",
+        "TSMC: production partner for the chips they design.",
+        "Networking: Broadcom's Tomahawk and Jericho switch ASICs are inside most Arista and Cisco hardware.",
+        "Nvidia: every dollar of hyperscaler ASIC spend is a dollar not going to Nvidia for inference workloads."
+      ]
+    },
+    intel: {
+      title: "Intel Foundry (IFS)",
+      summary: "Two very different stories. As a chip vendor, Gaudi was a near-total failure: over $1.3 billion in inventory charges and under 1% discrete AI accelerator market share. As a foundry, Intel is strategically important: its 18A process with backside power delivery is the only advanced node outside TSMC at meaningful scale. Microsoft has contracted Intel Foundry for Maia 2. Nvidia signed a foundry partnership in September 2025. CHIPS Act investment of $7.86 billion in US fabs makes Intel the primary geopolitical hedge against TSMC concentration risk.",
+      links: [
+        "Custom ASICs: contracted to fabricate Microsoft Maia 2 on 18A, the first major hyperscaler ASIC not built at TSMC.",
+        "Nvidia: foundry partnership announced September 2025; gives Nvidia a US-based non-TSMC option.",
+        "TSMC: Intel's entire proposition is as a supply chain hedge against TSMC's Taiwan concentration risk.",
+        "Hyperscalers: if Azure's Maia 2 succeeds, other hyperscalers have reason to diversify away from TSMC.",
+        "Gaudi AI chips: largely written off; Xeon CPUs retain relevance for agentic AI inference workloads on existing servers."
+      ]
+    },
+    hbm: {
+      title: "HBM Memory — SK Hynix, Samsung, Micron",
+      summary: "High Bandwidth Memory is stacked directly inside every AI accelerator and is currently the tightest single bottleneck in the stack. Sold out through 2026 across all three suppliers, with 2027 allocations already being negotiated. SK Hynix leads at 53% share and wins roughly 70% of Nvidia's Rubin HBM4 allocation. Samsung holds 35% and is locked in as AMD MI455X's primary HBM4 partner. Micron has 11% but is the only US-domiciled HBM maker. HBM4 single-stack pricing is around $500 versus $200 for HBM3.",
+      links: [
+        "Nvidia: SK Hynix supplies ~70% of Nvidia's HBM; stacks are co-packaged during CoWoS at TSMC.",
+        "AMD: Samsung is the primary HBM4 partner for MI455X.",
+        "Custom ASICs: every hyperscaler ASIC requires HBM co-packaged at fabrication.",
+        "TSMC: CoWoS packaging at TSMC is where HBM is bonded; CoWoS is itself oversubscribed through 2026.",
+        "Hyperscalers: Meta, Google, Microsoft and Amazon lock in long-term HBM allocation contracts directly."
+      ]
+    },
+    networking: {
+      title: "AI Networking — Nvidia, Arista, Cisco",
+      summary: "The fabric connecting GPUs inside a training cluster is as important as the GPUs themselves. Nvidia surpassed Arista and Cisco in data center Ethernet switching share in 2025 (25.9%, up 647% YoY) while also owning InfiniBand end-to-end. This creates a second form of Nvidia lock-in beyond CUDA. Arista remains the leading pure Ethernet vendor. The core battle is InfiniBand (Nvidia-proprietary, ultra-low latency, high cost) versus open Ethernet (Ultra Ethernet Consortium 1.0 finalized June 2025).",
+      links: [
+        "Nvidia: owns InfiniBand end-to-end and Spectrum-X Ethernet; networking is growing into a second major revenue engine alongside GPUs.",
+        "Hyperscalers: major back-end networking buyers; Meta and Oracle are Spectrum-X customers.",
+        "Neoclouds: must choose between InfiniBand (higher performance, Nvidia lock-in) and Ethernet (open, lower cost).",
+        "Broadcom: supplies Tomahawk and Jericho switch ASICs inside most Arista and Cisco hardware."
+      ]
+    },
+    power: {
+      title: "Power & Energy",
+      summary: "Electricity has become a strategic supply chain input. Morgan Stanley forecasts US data center power demand reaching 74 GW by 2028, with a projected shortfall of 49 GW in available grid access. Blackwell-generation racks run at 140 kW per rack versus roughly 10 kW for H100-era racks, a 14x density increase that makes power and liquid cooling the binding physical limits. Hyperscalers are going off-grid: Microsoft, Google and Amazon have all signed nuclear PPAs. SpaceX's orbital bet is fundamentally a power play: unlimited solar in orbit, no cooling water, no grid dependency.",
+      links: [
+        "Hyperscalers: locking in nuclear PPAs and on-site gas generation to secure firm power independent of local utilities.",
+        "Neoclouds: power access shapes where new capacity can be built; sites with grid headroom command a premium.",
+        "Sovereign AI: Gulf states have energy abundance but extreme cooling challenges at 45°C ambient; EU gigafactories face electricity prices double the US average.",
+        "SpaceX/xAI: the orbital data center strategy is fundamentally a solution to terrestrial power constraints.",
+        "Data centers broadly: liquid cooling is mandatory for Blackwell-density racks; air cooling cannot handle 140 kW per rack."
+      ]
+    }
+  };
+
+  const edges = [
+    // Physical infra -> Silicon/Cloud
+    { id:'hbm-nv',     from:'hbm',         fromSide:'top',    to:'nvidia',        toSide:'bottom', color:'neutral' },
+    { id:'hbm-amd',    from:'hbm',         fromSide:'top',    to:'amd',           toSide:'bottom', color:'jade' },
+    { id:'hbm-asic',   from:'hbm',         fromSide:'top',    to:'asics',         toSide:'bottom', color:'neutral' },
+    { id:'net-hs',     from:'networking',   fromSide:'top',    to:'hyperscalers',  toSide:'bottom', color:'steel' },
+    { id:'net-nc',     from:'networking',   fromSide:'top',    to:'neoclouds',     toSide:'bottom', color:'copper' },
+    { id:'pwr-hs',     from:'power',        fromSide:'top',    to:'hyperscalers',  toSide:'bottom', color:'neutral' },
+    { id:'pwr-nc',     from:'power',        fromSide:'top',    to:'neoclouds',     toSide:'bottom', color:'neutral' },
+    // Foundry -> Silicon
+    { id:'tsmc-nv',    from:'tsmc',         fromSide:'top',    to:'nvidia',        toSide:'bottom', color:'neutral' },
+    { id:'tsmc-amd',   from:'tsmc',         fromSide:'top',    to:'amd',           toSide:'bottom', color:'jade' },
+    { id:'tsmc-asic',  from:'tsmc',         fromSide:'top',    to:'asics',         toSide:'bottom', color:'neutral' },
+    { id:'brd-asic',   from:'broadcom',     fromSide:'top',    to:'asics',         toSide:'bottom', color:'neutral' },
+    { id:'intel-asic', from:'intel',        fromSide:'top',    to:'asics',         toSide:'bottom', color:'neutral', dashed:true },
+    { id:'intel-nv',   from:'intel',        fromSide:'top',    to:'nvidia',        toSide:'bottom', color:'neutral', dashed:true },
+    // Silicon -> Cloud
+    { id:'nv-hs',      from:'nvidia',       fromSide:'top',    to:'hyperscalers',  toSide:'bottom', color:'neutral' },
+    { id:'nv-nc',      from:'nvidia',       fromSide:'top',    to:'neoclouds',     toSide:'bottom', color:'copper' },
+    { id:'nv-sx',      from:'nvidia',       fromSide:'top',    to:'spacex',        toSide:'bottom', color:'copper' },
+    { id:'amd-hs',     from:'amd',          fromSide:'top',    to:'hyperscalers',  toSide:'bottom', color:'jade' },
+    { id:'amd-nc',     from:'amd',          fromSide:'top',    to:'neoclouds',     toSide:'bottom', color:'jade' },
+    { id:'asic-hs',    from:'asics',        fromSide:'top',    to:'hyperscalers',  toSide:'bottom', color:'steel' },
+    // Cloud horizontal
+    { id:'nc-hs',      from:'neoclouds',    fromSide:'left',   to:'hyperscalers',  toSide:'right',  color:'copper' },
+    // Cloud -> Demand
+    { id:'hs-ent',     from:'hyperscalers', fromSide:'top',    to:'enterprises',   toSide:'bottom', color:'steel' },
+    { id:'nc-ai',      from:'neoclouds',    fromSide:'top',    to:'ailabs',        toSide:'bottom', color:'copper' },
+    { id:'sx-ai',      from:'spacex',       fromSide:'top',    to:'ailabs',        toSide:'bottom', color:'copper' },
+    { id:'sx-hs',      from:'spacex',       fromSide:'left',   to:'hyperscalers',  toSide:'right',  color:'copper' },
+    { id:'ai-hs',      from:'ailabs',       fromSide:'bottom', to:'hyperscalers',  toSide:'top',    color:'neutral', dashed:true },
+    // Demand -> Model layer
+    { id:'ent-front',  from:'enterprises',  fromSide:'top',    to:'frontier',      toSide:'bottom', color:'steel' },
+    { id:'ai-front',   from:'ailabs',       fromSide:'top',    to:'frontier',      toSide:'bottom', color:'violet', dashed:true },
+    // Model -> Devtools/Sovereign
+    { id:'front-dev',  from:'frontier',     fromSide:'bottom', to:'devtools',      toSide:'top',    color:'violet', dashed:true },
+    { id:'open-dev',   from:'openmodels',   fromSide:'bottom', to:'devtools',      toSide:'top',    color:'violet', dashed:true },
+    { id:'sov-hs',     from:'sovereign',    fromSide:'bottom', to:'hyperscalers',  toSide:'top',    color:'jade', dashed:true },
+    { id:'sov-nc',     from:'sovereign',    fromSide:'bottom', to:'neoclouds',     toSide:'top',    color:'jade', dashed:true }
+  ];
+
+  const colorVar = { steel:'var(--steel)', copper:'var(--copper)', jade:'var(--jade)', neutral:'var(--parchment-dim)', violet:'var(--violet)', rose:'var(--rose)' };
+
+  function nodeById(id){ return nodes.find(n => n.dataset.id === id); }
+
+  function anchorPoint(id, side){
+    const el = nodeById(id);
+    if(!el) return {x:0,y:0};
+    const r = el.getBoundingClientRect();
+    const d = diagram.getBoundingClientRect();
+    const x0 = r.left - d.left, y0 = r.top - d.top;
+    switch(side){
+      case 'top':    return { x: x0 + r.width/2, y: y0 };
+      case 'bottom': return { x: x0 + r.width/2, y: y0 + r.height };
+      case 'left':   return { x: x0,              y: y0 + r.height/2 };
+      case 'right':  return { x: x0 + r.width,    y: y0 + r.height/2 };
+    }
+  }
+
+  function pathFor(edge){
+    const a = anchorPoint(edge.from, edge.fromSide);
+    const b = anchorPoint(edge.to, edge.toSide);
+    const vPair = (edge.fromSide==='top'||edge.fromSide==='bottom') && (edge.toSide==='top'||edge.toSide==='bottom');
+    if(vPair){
+      const midY = (a.y + b.y) / 2;
+      return `M ${a.x} ${a.y} L ${a.x} ${midY} L ${b.x} ${midY} L ${b.x} ${b.y}`;
+    }
+    return `M ${a.x} ${a.y} C ${a.x + (b.x-a.x)*0.5} ${a.y} ${a.x + (b.x-a.x)*0.5} ${b.y} ${b.x} ${b.y}`;
+  }
+
+  function draw(){
+    const d = diagram.getBoundingClientRect();
+    svg.setAttribute('width', d.width);
+    svg.setAttribute('height', d.height);
+    svg.innerHTML = '<defs></defs>';
+    edges.forEach(edge => {
+      if(!nodeById(edge.from)||!nodeById(edge.to)) return;
+      const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('d', pathFor(edge));
+      p.setAttribute('stroke', colorVar[edge.color]||'var(--parchment-dim)');
+      p.classList.add('edge');
+      if(edge.dashed) p.classList.add('dashed');
+      p.dataset.id = edge.id;
+      p.dataset.from = edge.from;
+      p.dataset.to = edge.to;
+      svg.appendChild(p);
+    });
+    applySelection();
+  }
+
+  let selected = null;
+
+  function applySelection(){
+    const paths = Array.from(svg.querySelectorAll('path.edge'));
+    if(!selected){
+      nodes.forEach(n => { n.classList.remove('is-active','is-dim'); n.setAttribute('aria-pressed','false'); });
+      paths.forEach(p => p.classList.remove('is-active','is-dim'));
+      return;
+    }
+    const related = edges.filter(e => e.from===selected||e.to===selected);
+    const relatedIds = new Set();
+    related.forEach(e => { relatedIds.add(e.from); relatedIds.add(e.to); });
+    nodes.forEach(n => {
+      const id = n.dataset.id;
+      n.classList.toggle('is-active', id===selected);
+      n.classList.toggle('is-dim', id!==selected && !relatedIds.has(id));
+      n.setAttribute('aria-pressed', id===selected ? 'true' : 'false');
+    });
+    paths.forEach(p => {
+      const isRel = related.some(e => e.id===p.dataset.id);
+      p.classList.toggle('is-active', isRel);
+      p.classList.toggle('is-dim', !isRel);
+    });
+  }
+
+  function renderDetail(id){
+    const t = nodeText[id];
+    if(!t){ detail.classList.remove('has-content'); detail.innerHTML = PLACEHOLDER; return; }
+    detail.classList.add('has-content');
+    detail.innerHTML = `<span class="detail-badge">node</span><h4 style="display:inline;">${t.title}</h4><p style="margin-top:10px;">${t.summary}</p><ul>${t.links.map(l=>`<li>${l}</li>`).join('')}</ul>`;
+  }
+
+  // ── Dropdown wiring ──────────────────────────────────────────────────────────
+  const flowSelect   = document.getElementById('flowSelect');
+  const flowSelectVal= document.getElementById('flowSelectValue');
+  const flowDropdown = document.getElementById('flowDropdown');
+  const clearBtn     = document.getElementById('clearTrace');
+  const flowOptions  = Array.from(flowDropdown.querySelectorAll('.flow-option'));
+
+  function openDropdown(){
+    flowDropdown.classList.add('open');
+    flowSelect.classList.add('open');
+    flowSelect.setAttribute('aria-expanded','true');
+  }
+  function closeDropdown(){
+    flowDropdown.classList.remove('open');
+    flowSelect.classList.remove('open');
+    flowSelect.setAttribute('aria-expanded','false');
+  }
+  flowSelect.addEventListener('click', e => {
+    e.stopPropagation();
+    flowDropdown.classList.contains('open') ? closeDropdown() : openDropdown();
+  });
+  flowSelect.addEventListener('keydown', e => {
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); flowDropdown.classList.contains('open') ? closeDropdown() : openDropdown(); }
+    if(e.key==='Escape') closeDropdown();
+  });
+  document.addEventListener('click', () => closeDropdown());
+  flowDropdown.addEventListener('click', e => e.stopPropagation());
+
+  // ── Trace system ─────────────────────────────────────────────────────────────
+  const traces = {
+    hybrid: {
+      edges: ['nc-ai','ai-hs'],
+      nodes: ['neoclouds','ailabs','hyperscalers'],
+      label: 'Hybrid: train on neocloud, serve on hyperscaler',
+      title: 'Hybrid pattern',
+      body: 'Most mature AI teams in 2026 train on a neocloud (fast GPU access, transparent pricing, Nvidia priority allocation) then shift inference and serving to a hyperscaler (global reach, managed services, compliance). Data sits in a cloud-agnostic store in between. The tradeoffs are complementary rather than competing.'
+    },
+    lockin: {
+      edges: ['hbm-nv','tsmc-nv','nv-hs','nv-nc','nv-sx','net-hs','net-nc'],
+      nodes: ['hbm','tsmc','nvidia','networking','hyperscalers','neoclouds','spacex','ailabs'],
+      label: 'Nvidia lock-in chain',
+      title: 'Nvidia lock-in chain',
+      body: 'The lock-in runs deeper than it looks. SK Hynix allocates ~70% of its HBM4 to Nvidia. TSMC fabricates every Nvidia GPU. Nvidia sells those GPUs up to hyperscalers, neoclouds and SpaceX/xAI — and separately sells InfiniBand and Spectrum-X networking into those same data centers. CUDA then locks in the AI labs training on top. Three separate lock-in mechanisms — memory allocation, chip supply, and networking — all pointing at the same vendor.'
+    },
+    asicescape: {
+      edges: ['brd-asic','tsmc-asic','asic-hs','intel-asic'],
+      nodes: ['broadcom','tsmc','intel','asics','hyperscalers','ailabs'],
+      label: 'Custom ASIC escape route',
+      title: 'Custom ASIC escape route',
+      body: 'Hyperscalers are building their way out of Nvidia dependency for inference. Broadcom and Marvell co-design the chips (~95% of the custom ASIC market). TSMC fabricates them. The ASICs then sit captive inside hyperscaler data centers running inference at 30-44% lower cost than equivalent Nvidia GPUs. Microsoft\'s Maia 2, contracted to Intel\'s 18A node, breaks one piece of this: it is the first major hyperscaler ASIC not built at TSMC, opening a second supply path and reducing geopolitical concentration risk.'
+    },
+    sovereign: {
+      edges: ['sov-hs','sov-nc','nv-hs','pwr-hs','ent-front'],
+      nodes: ['sovereign','nvidia','hyperscalers','neoclouds','power','enterprises','frontier','openmodels'],
+      label: 'Sovereign AI flow',
+      title: 'Sovereign AI flow',
+      body: 'The sovereign AI playbook runs bottom to top. A national government negotiates GPU allocation directly with Nvidia (52% of sovereign projects use Nvidia chips). Power and cooling infrastructure is built or contracted — energy is abundant in the Gulf but thermal management at 45°C is a real constraint; EU gigafactories face electricity prices double the US average. Cloud capacity is provisioned through a hyperscaler sovereign region or neocloud with data residency controls. Open-weight models are fine-tuned on national data. Enterprises in regulated industries then access AI through that sovereign stack rather than via public hyperscaler APIs.'
+    },
+    openmodel: {
+      edges: ['open-dev','nc-ai','amd-nc'],
+      nodes: ['openmodels','devtools','neoclouds','ailabs','amd'],
+      label: 'Open model path',
+      title: 'Open model path',
+      body: 'The open-weight path bypasses frontier lab APIs entirely. Meta Llama 4, Mistral, DeepSeek and Qwen are distributed through Hugging Face, fine-tuned using Databricks or MLflow on enterprise data, then hosted on neoclouds (Together AI, Lambda, Fireworks) or on-premises — at a fraction of closed API per-token costs. AMD GPUs increasingly power this path: the memory advantage matters more than CUDA ecosystem depth for large-context open models running on PyTorch or ROCm natively.'
+    },
+    deepseek: {
+      edges: ['open-dev','hbm-amd','tsmc-amd','amd-nc'],
+      nodes: ['openmodels','devtools','hbm','amd','tsmc','neoclouds'],
+      label: 'DeepSeek: first frontier model without Nvidia',
+      title: 'DeepSeek signal: first frontier model without Nvidia',
+      body: 'DeepSeek V4 is the first frontier-class model trained entirely on Huawei Ascend 910 silicon — no Nvidia GPUs. This matters structurally: it proves CUDA is not a permanent prerequisite for frontier training, just the current default. The path runs through alternative silicon (Ascend), alternative HBM supply (Samsung over SK Hynix), and open-weight distribution via Hugging Face and neoclouds. In markets blocked from Nvidia by US export controls — primarily China — this path is not optional. The rest of the world watches it as a leading indicator of what a post-CUDA stack might look like.'
+    }
+  };
+
+  let activeTrace = null;
+  let traceTimer = null, dotEl = null;
+
+  const PLACEHOLDER = '<p class="detail-placeholder">Tap any block to trace its dependencies and value flows through the stack.</p>';
+
+  function stopTrace(){
+    if(traceTimer){ cancelAnimationFrame(traceTimer); traceTimer=null; }
+    if(dotEl){ dotEl.remove(); dotEl=null; }
+    svg.querySelectorAll('path.edge').forEach(p => p.classList.remove('is-active','is-dim'));
+    nodes.forEach(n => n.classList.remove('is-active','is-dim'));
+    flowOptions.forEach(o => o.classList.remove('is-active'));
+    flowSelect.classList.remove('is-on');
+    flowSelectVal.textContent = 'Select a flow\u2026';
+    clearBtn.style.display = 'none';
+    detail.classList.remove('has-content');
+    activeTrace = null;
+  }
+
+  function runTrace(key){
+    selected = null; applySelection();
+    const tr = traces[key];
+    activeTrace = key;
+    const edgeSet = new Set(tr.edges);
+    const nodeSet = new Set(tr.nodes);
+    svg.querySelectorAll('path.edge').forEach(p=>{
+      p.classList.toggle('is-active', edgeSet.has(p.dataset.id));
+      p.classList.toggle('is-dim', !edgeSet.has(p.dataset.id));
+    });
+    nodes.forEach(n=>{
+      n.classList.toggle('is-active', nodeSet.has(n.dataset.id));
+      n.classList.toggle('is-dim', !nodeSet.has(n.dataset.id));
+    });
+    flowOptions.forEach(o => o.classList.toggle('is-active', o.dataset.trace===key));
+    flowSelect.classList.add('is-on');
+    flowSelectVal.textContent = tr.label;
+    clearBtn.style.display = '';
+    detail.classList.add('has-content');
+    detail.innerHTML = `<span class="detail-badge">flow</span><h4 style="display:inline;">${tr.title}</h4><p style="margin-top:10px;">${tr.body}</p>`;
+    // animate dot
+    const animPaths = tr.edges.slice(0,2).map(id=>svg.querySelector(`path[data-id="${id}"]`)).filter(Boolean);
+    if(reduced || animPaths.length===0) return;
+    dotEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dotEl.setAttribute('r',4); dotEl.classList.add('flow-dot'); svg.appendChild(dotEl);
+    let leg=0, t=0;
+    (function step(){
+      if(!dotEl) return;
+      const path=animPaths[leg]; const len=path.getTotalLength();
+      t+=0.011; if(t>1){t=0;leg=(leg+1)%animPaths.length;}
+      const pt=path.getPointAtLength(t*len);
+      dotEl.setAttribute('cx',pt.x); dotEl.setAttribute('cy',pt.y); dotEl.style.opacity=1;
+      traceTimer=requestAnimationFrame(step);
+    })();
+  }
+
+  flowOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const key = opt.dataset.trace;
+      closeDropdown();
+      if(activeTrace===key){ stopTrace(); detail.innerHTML=PLACEHOLDER; }
+      else { stopTrace(); runTrace(key); }
+    });
+  });
+
+  clearBtn.addEventListener('click', () => {
+    stopTrace();
+    detail.innerHTML = PLACEHOLDER;
+  });
+
+  nodes.forEach(n => {
+    n.addEventListener('click', () => {
+      const id = n.dataset.id;
+      if(activeTrace) stopTrace();
+      selected = (selected===id) ? null : id;
+      applySelection();
+      if(selected){
+        detail.classList.add('has-content');
+        renderDetail(selected);
+      } else {
+        detail.classList.remove('has-content');
+        detail.innerHTML = PLACEHOLDER;
+      }
+    });
+    n.addEventListener('keydown', e => {
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); n.click(); }
+    });
+  });
+
+  let raf=null;
+  function scheduleDraw(){ if(raf) cancelAnimationFrame(raf); raf=requestAnimationFrame(draw); }
+  window.addEventListener('resize',scheduleDraw);
+  if(window.ResizeObserver) new ResizeObserver(scheduleDraw).observe(diagram);
+  window.addEventListener('load',()=>draw());
+  draw(); setTimeout(draw,250);
+
+  // ── Company overlay ──────────────────────────────────────────────────────────
+  const NODE_NAMES = {
+    nvidia:      'Merchant GPU — NVIDIA layer',
+    amd:         'Merchant GPU — AMD challenger',
+    asics:       'Custom Captive ASICs',
+    tsmc:        'Advanced Foundry (TSMC)',
+    broadcom:    'ASIC Co-design (Broadcom & Marvell)',
+    intel:       'Alternative Foundry (Intel)',
+    hbm:         'HBM Memory',
+    networking:  'AI Networking fabric',
+    power:       'Power & Energy',
+    hyperscalers:'Hyperscalers',
+    neoclouds:   'Neoclouds',
+    spacex:      'SpaceX / xAI',
+    enterprises: 'Enterprise demand layer',
+    ailabs:      'AI Labs & Model Developers',
+    devtools:    'Developer Tools & MLOps',
+    sovereign:   'Sovereign AI',
+    frontier:    'Frontier Models',
+    openmodels:  'Open Model Ecosystem',
+  };
+
+  const companySelect   = document.getElementById('companySelect');
+  const companySelectVal= document.getElementById('companySelectValue');
+  const companyDropdown = document.getElementById('companyDropdown');
+  const clearCompanyBtn = document.getElementById('clearCompany');
+  let activeCompany = null;
+  let allCompanies  = [];
+
+  function openCompanyDropdown(){
+    companyDropdown.classList.add('open');
+    companySelect.classList.add('open');
+    companySelect.setAttribute('aria-expanded','true');
+  }
+  function closeCompanyDropdown(){
+    companyDropdown.classList.remove('open');
+    companySelect.classList.remove('open');
+    companySelect.setAttribute('aria-expanded','false');
+  }
+
+  companySelect.addEventListener('click', e => {
+    e.stopPropagation();
+    companyDropdown.classList.contains('open') ? closeCompanyDropdown() : openCompanyDropdown();
+  });
+  companySelect.addEventListener('keydown', e => {
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); companyDropdown.classList.contains('open') ? closeCompanyDropdown() : openCompanyDropdown(); }
+    if(e.key==='Escape') closeCompanyDropdown();
+  });
+  companyDropdown.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', () => closeCompanyDropdown());
+
+  function stopCompanyTrace(){
+    if(!activeCompany) return;
+    activeCompany = null;
+    svg.querySelectorAll('path.edge').forEach(p => p.classList.remove('is-active','is-dim'));
+    nodes.forEach(n => n.classList.remove('is-active','is-dim'));
+    companySelect.classList.remove('is-on');
+    companySelectVal.textContent = 'View a company…';
+    clearCompanyBtn.style.display = 'none';
+    detail.classList.remove('has-content');
+    detail.innerHTML = PLACEHOLDER;
+  }
+
+  function runCompanyTrace(company){
+    if(activeTrace){ stopTrace(); detail.innerHTML = PLACEHOLDER; }
+    selected = null; applySelection();
+    activeCompany = company.id;
+
+    const primarySet = new Set(company.nodes);
+
+    // Find edges connected to primary nodes
+    const relatedEdges = edges.filter(e => primarySet.has(e.from) || primarySet.has(e.to));
+    const edgeSet = new Set(relatedEdges.map(e => e.id));
+
+    // Connected (but not primary) nodes stay visible at normal opacity
+    const connectedSet = new Set();
+    relatedEdges.forEach(e => { connectedSet.add(e.from); connectedSet.add(e.to); });
+    const visibleSet = new Set([...primarySet, ...connectedSet]);
+
+    nodes.forEach(n => {
+      const id = n.dataset.id;
+      n.classList.toggle('is-active', primarySet.has(id));
+      n.classList.toggle('is-dim', !visibleSet.has(id));
+    });
+    svg.querySelectorAll('path.edge').forEach(p => {
+      p.classList.toggle('is-active', edgeSet.has(p.dataset.id));
+      p.classList.toggle('is-dim', !edgeSet.has(p.dataset.id));
+    });
+
+    // Update company options active state
+    companyDropdown.querySelectorAll('.flow-option').forEach(o =>
+      o.classList.toggle('is-active', o.dataset.companyId === company.id)
+    );
+
+    companySelect.classList.add('is-on');
+    companySelectVal.textContent = company.name;
+    clearCompanyBtn.style.display = '';
+
+    // Detail panel
+    detail.classList.add('has-content');
+    const statusLabel = company.research_status === 'invested'
+      ? '<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--jade);margin-left:8px;">● PORTFOLIO</span>'
+      : '<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--parchment-dim);margin-left:8px;">○ PIPELINE</span>';
+    const nodeList = company.nodes.length
+      ? '<ul>' + company.nodes.map(n => `<li>Sits in the <strong>${NODE_NAMES[n] || n}</strong> node</li>`).join('') + '</ul>'
+      : '';
+    const ticker = company.ticker
+      ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--parchment-dim);margin-left:6px;">${company.ticker}</span>`
+      : '';
+    detail.innerHTML =
+      `<span class="detail-badge">company</span>` +
+      `<h4 style="display:inline;">${company.name}</h4>${ticker}${statusLabel}` +
+      `<p style="margin-top:10px;">${company.fit_summary || 'No description available.'}</p>` +
+      nodeList;
+  }
+
+  clearCompanyBtn.addEventListener('click', () => {
+    stopCompanyTrace();
+  });
+
+  async function loadCompanies(){
+    try {
+      const res  = await fetch('/api/stack-companies');
+      const data = await res.json();
+      allCompanies = data.companies || [];
+      buildCompanyDropdown();
+    } catch(err){
+      companySelectVal.textContent = 'Unavailable';
+      console.error('stack-companies fetch failed:', err);
+    }
+  }
+
+  function buildCompanyDropdown(){
+    companyDropdown.innerHTML = '';
+    if(!allCompanies.length){
+      companySelectVal.textContent = 'No companies';
+      return;
+    }
+    companySelectVal.textContent = 'View a company…';
+
+    const invested = allCompanies.filter(c => c.research_status === 'invested');
+    const pipeline = allCompanies.filter(c => c.research_status === 'pipeline');
+
+    function addGroup(label, companies){
+      if(!companies.length) return;
+      const li = document.createElement('li');
+      li.className = 'flow-group-label';
+      li.textContent = label;
+      companyDropdown.appendChild(li);
+      companies.forEach(company => {
+        const opt = document.createElement('li');
+        opt.className = 'flow-option';
+        opt.dataset.companyId = company.id;
+        opt.textContent = company.name + (company.ticker ? ' (' + company.ticker + ')' : '');
+        opt.setAttribute('role','option');
+        opt.addEventListener('click', () => {
+          closeCompanyDropdown();
+          if(activeCompany === company.id){ stopCompanyTrace(); }
+          else { stopCompanyTrace(); runCompanyTrace(company); }
+        });
+        companyDropdown.appendChild(opt);
+      });
+    }
+
+    addGroup('Portfolio', invested);
+    addGroup('Watched Pipeline', pipeline);
+  }
+
+  loadCompanies();
+
+})();
+</script>
+</body>
+</html>
