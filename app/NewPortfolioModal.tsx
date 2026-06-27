@@ -90,11 +90,17 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
       .finally(() => setLoadingPreview(false));
   }, [selectedIds, capitalAmount]);
 
-  const filteredCompanies = availableCompanies.filter((c) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return c.name.toLowerCase().includes(q) || (c.ticker ?? "").toLowerCase().includes(q);
-  });
+  const filteredCompanies = availableCompanies
+    .filter((c) => {
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return c.name.toLowerCase().includes(q) || (c.ticker ?? "").toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      const confDiff = (b.confidence_score ?? -1) - (a.confidence_score ?? -1);
+      if (confDiff !== 0) return confDiff;
+      return (b.composite_score ?? -1) - (a.composite_score ?? -1);
+    });
 
   function toggleCompany(id: string) {
     setSelectedIds((prev) => {
@@ -113,14 +119,14 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
     });
   }
 
-  function selectHighConfidence() {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      for (const c of availableCompanies) {
-        if ((c.confidence_score ?? 0) >= 4) next.add(c.company_id);
-      }
-      return next;
-    });
+  function selectByConfidence(min: number) {
+    setSelectedIds(
+      new Set(
+        availableCompanies
+          .filter((c) => (c.confidence_score ?? 0) >= min)
+          .map((c) => c.company_id)
+      )
+    );
   }
 
   function clearSelection() {
@@ -335,10 +341,22 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
               </label>
               <div className="flex flex-wrap gap-2 pb-0.5">
                 <button
-                  onClick={selectHighConfidence}
+                  onClick={() => selectByConfidence(5)}
                   className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-signal hover:text-signal"
                 >
-                  Select 4/5+ confidence
+                  5/5 only
+                </button>
+                <button
+                  onClick={() => selectByConfidence(4)}
+                  className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-signal hover:text-signal"
+                >
+                  4/5+
+                </button>
+                <button
+                  onClick={() => selectByConfidence(3)}
+                  className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-signal hover:text-signal"
+                >
+                  3/5+
                 </button>
                 <button
                   onClick={selectAllFiltered}
@@ -394,9 +412,15 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                             {c.name}
                           </span>
                           <span className="font-mono text-[10px] text-muted">
-                            {c.ticker}
-                            {c.composite_score !== null && ` · ${c.composite_score}`}
-                            {c.confidence_score !== null && `/${c.confidence_score}`}
+                            {c.ticker ?? "—"}
+                            {c.composite_score !== null && (
+                              <>
+                                {" · "}
+                                <span className="text-[#cfd1d5]">{c.composite_score}</span>
+                                {"  "}
+                                <span>{c.confidence_score ?? "—"}/5</span>
+                              </>
+                            )}
                           </span>
                         </span>
                       </label>

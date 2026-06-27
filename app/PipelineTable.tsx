@@ -52,7 +52,7 @@ function matchesFilter(status: string, filter: Filter): boolean {
 
 export default function PipelineTable({ rows }: { rows: Row[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"default" | "composite" | "confidence">("default");
+  const [sortBy, setSortBy] = useState<"default" | "composite" | "confidence">("confidence");
   const [filter, setFilter] = useState<Filter>("all");
   const [pending, setPending] = useState<string | null>(null);
 

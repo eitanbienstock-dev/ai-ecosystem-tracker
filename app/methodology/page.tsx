@@ -146,17 +146,102 @@ export default function MethodologyPage() {
 
       <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Workflow states</h2>
-        <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Every company sits in exactly one of three states. Investment Portfolio is real capital deployed.
-          Watched Pipeline is active candidates, manually ranked rather than auto-sorted by score alone, and
-          it also includes current holdings so they can be compared side by side against what is not yet
-          funded. Archived is anything no longer active, either evaluated and passed on or previously
-          invested and since exited, and every archived company carries a required, visible reason, not
-          just a status change with no record of why. All three live on the{" "}
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Every company carries exactly one of four research statuses, all visible in the pipeline table on
+          the{" "}
           <Link href="/" className="text-signal hover:underline">
             homepage
           </Link>
-          .
+          {" "}and filterable by status.
+        </p>
+        <div className="mb-3 overflow-hidden rounded border border-line">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-line bg-panel/40">
+                <td className="px-4 py-3 font-medium text-[#e7e8ea]">Watched</td>
+                <td className="px-4 py-3 text-[#cfd1d5]">
+                  In the active pipeline. Scored and ranked, no current position in any portfolio.
+                </td>
+              </tr>
+              <tr className="border-b border-line bg-panel/40">
+                <td className="px-4 py-3 font-medium text-[#e7e8ea]">Holding</td>
+                <td className="px-4 py-3 text-[#cfd1d5]">
+                  An active position exists in at least one portfolio. Set automatically when a buy
+                  transaction is recorded.
+                </td>
+              </tr>
+              <tr className="border-b border-line bg-panel/40">
+                <td className="px-4 py-3 font-medium text-[#e7e8ea]">Exited</td>
+                <td className="px-4 py-3 text-[#cfd1d5]">
+                  Was previously held and has been fully sold across all portfolios. Set automatically
+                  when net shares reach zero.
+                </td>
+              </tr>
+              <tr className="border-b border-line bg-panel/40 last:border-0">
+                <td className="px-4 py-3 font-medium text-[#e7e8ea]">Archived</td>
+                <td className="px-4 py-3 text-[#cfd1d5]">
+                  No longer under active consideration. Evaluated and passed on, or exited with no
+                  expectation of return. Every archived company carries a required, visible reason.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          Status transitions between Watched, Holding, and Exited are automatic: the system updates
+          research_status whenever a buy or sell transaction is recorded, based on net shares across all
+          portfolios. Moving a company from Exited or Archived back to the pipeline restores it to Watched.
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
+          Portfolio architecture
+        </h2>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          The system supports multiple named portfolios, each tracking positions independently. Two portfolio
+          types are available.
+        </p>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          <span className="font-medium text-[#e7e8ea]">Manual</span> portfolios are built position by
+          position at the user&apos;s discretion, with no formula governing how capital is sized or
+          allocated. Each buy or sell is recorded individually.
+        </p>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          <span className="font-medium text-[#e7e8ea]">Model</span> portfolios are created with a fixed
+          capital amount and a selected set of companies. At creation, the system computes an allocation
+          across the selected companies using a confidence-adjusted composite weighting formula:
+          raw_weight&nbsp;=&nbsp;composite_score&nbsp;×&nbsp;confidence_score for each company; each
+          company&apos;s allocation_pct&nbsp;=&nbsp;raw_weight&nbsp;÷&nbsp;sum of all raw_weights;
+          dollar_amount&nbsp;=&nbsp;allocation_pct&nbsp;×&nbsp;capital_amount; shares&nbsp;=&nbsp;floor
+          of dollar_amount&nbsp;÷&nbsp;current price. Positions created at model launch record the formula
+          allocation; any subsequent transactions record the actual override percentage if they deviate
+          from the model. Position cards display both the current actual allocation and the original formula
+          allocation side by side, and a visible badge flags any position that has been manually adjusted.
+        </p>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          Decision log entries are portfolio-scoped: each entry carries a portfolio_id foreign key linking
+          it to the portfolio the decision relates to.
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
+          Transaction ledger
+        </h2>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          All position changes — buys, sells, trims — are recorded as individual transactions in a
+          portfolio_transactions table rather than stored as flat current values on the company record.
+          From that ledger, the system computes at read time: shares held (net of all buys and sells for
+          that company in that portfolio), weighted average cost basis across all buys, and total cost
+          basis. A company&apos;s research_status is derived from net shares across all portfolios combined:
+          any net-positive position anywhere means Holding; fully sold across all portfolios means Exited.
         </p>
       </section>
 
@@ -260,16 +345,18 @@ export default function MethodologyPage() {
 
       <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
-          Position sizing: target weight
+          Position sizing
         </h2>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Manual portfolios use discretionary sizing: each position is sized by the user&apos;s own
+          judgment at the time of entry, with no formula involvement.
+        </p>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Target weight for any holding is its composite score divided by the sum of composite scores
-          across all current holdings. It is recalculated live on every page load rather than stored, so it
-          always reflects the latest scores, including the new candidate, if previewing a promotion. Current
-          weight, shares held multiplied by live price divided by total portfolio value, is tracked
-          separately. A gap of 10 points or more between current and target weight is flagged, which can
-          mean either the price has moved or a re-score has changed the target, not necessarily that
-          something is wrong.
+          Model portfolios use a formula-driven allocation described in the Portfolio architecture section
+          above. The formula is applied once at portfolio creation using scores at that point in time;
+          subsequent re-scores do not automatically rebalance existing positions. The portfolio display
+          shows each position&apos;s current actual allocation alongside its original formula allocation,
+          so any drift from the original model is visible at a glance.
         </p>
       </section>
 
