@@ -56,15 +56,12 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [pending, setPending] = useState<string | null>(null);
 
-  const counts: Record<Filter, number> = {
-    all: rows.length,
-    watched: rows.filter((r) => r.company.research_status === "watched").length,
-    holding: rows.filter(
-      (r) => r.company.research_status === "holding" || r.company.research_status === "invested"
-    ).length,
-    exited: rows.filter((r) => r.company.research_status === "exited").length,
-    archived: rows.filter((r) => r.company.research_status === "archived").length,
-  };
+  const counts = Object.fromEntries(
+    FILTER_LABELS.map(({ key }) => [
+      key,
+      rows.filter(({ company: c }) => matchesFilter(c.research_status, key)).length,
+    ])
+  ) as Record<Filter, number>;
 
   const sorted =
     sortBy === "default"
