@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { computeModelAllocations, AllocationInput } from '@/lib/portfolioAllocation';
-import { getLivePrice } from '@/lib/marketData';
 
 function latestScoresByCompany(
   scoreRows: { company_id: string; composite_score: number | null; confidence_score: number | null; scored_at: string }[]
@@ -84,19 +83,9 @@ export async function POST(request: NextRequest) {
 
   const scoreMap = latestScoresByCompany(scoreRows ?? []);
 
-  // Fetch live share prices from Finnhub in parallel for all tickers
+  // Allocation % and $ are price-independent (raw_weight = composite × confidence).
+  // Live prices are fetched separately via /api/prices and used client-side.
   const companyList = companies ?? [];
-  const priceResults = await Promise.allSettled(
-    companyList.map((c) => (c.ticker ? getLivePrice(c.ticker) : Promise.resolve(null)))
-  );
-  const priceMap = new Map<string, number>();
-  companyList.forEach((c, i) => {
-    const result = priceResults[i];
-    if (result.status === 'fulfilled' && result.value !== null) {
-      priceMap.set(c.id, result.value.price);
-    }
-  });
-
   const inputs: AllocationInput[] = companyList.map((c) => {
     const scores = scoreMap.get(c.id);
     return {
@@ -105,7 +94,7 @@ export async function POST(request: NextRequest) {
       ticker: c.ticker,
       composite_score: scores?.composite_score ?? 0,
       confidence_score: scores?.confidence_score ?? 0,
-      current_price: priceMap.get(c.id) ?? null,
+      current_price: null,
     };
   });
 

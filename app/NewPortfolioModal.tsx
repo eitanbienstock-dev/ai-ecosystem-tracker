@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { computeModelAllocations, AllocationInput } from "@/lib/portfolioAllocation";
 
 export type Portfolio = {
   id: string;
@@ -58,8 +59,12 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
   const [search, setSearch] = useState("");
   const [previewRows, setPreviewRows] = useState<PreviewRow[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
-  const [loadingPreview, setLoadingPreview] = useState(false);
+  // priceMap: company_id → live share price (null = fetch failed for this ticker)
+  const [priceMap, setPriceMap] = useState<Map<string, number | null>>(new Map());
+  const [syncingPrices, setSyncingPrices] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [createResult, setCreateResult] = useState<CreateResult | null>(null);
+  const hasAutoSynced = useRef(false);
 
   // Fetch company list when entering model config step
   useEffect(() => {
@@ -71,23 +76,65 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
       .finally(() => setLoadingCompanies(false));
   }, [step]);
 
-  // Recompute preview whenever selection or capital changes
+  // Auto-sync once if entering model_config with pre-existing selection
+  useEffect(() => {
+    if (step !== "model_config" || hasAutoSynced.current) return;
+    hasAutoSynced.current = true;
+    if (selectedIds.size > 0 && Number(capitalAmount) > 0) {
+      void syncPrices();
+    }
+  // syncPrices is stable within a render; deps intentionally limited to step
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // Recompute preview rows client-side whenever selection, capital, or prices change.
+  // Allocation % and $ are price-independent; shares fill in once priceMap is populated.
   useEffect(() => {
     const capital = Number(capitalAmount);
-    if (selectedIds.size === 0 || capital <= 0) {
+    if (selectedIds.size === 0 || capital <= 0 || availableCompanies.length === 0) {
       setPreviewRows([]);
       return;
     }
-    setLoadingPreview(true);
-    fetch("/api/portfolios/model-preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ company_ids: Array.from(selectedIds), capital_amount: capital }),
-    })
-      .then((r) => r.json())
-      .then(({ allocations }) => setPreviewRows(allocations ?? []))
-      .finally(() => setLoadingPreview(false));
-  }, [selectedIds, capitalAmount]);
+    const selected = availableCompanies.filter((c) => selectedIds.has(c.company_id));
+    const inputs: AllocationInput[] = selected.map((c) => ({
+      company_id: c.company_id,
+      name: c.name,
+      ticker: c.ticker,
+      composite_score: c.composite_score ?? 0,
+      confidence_score: c.confidence_score ?? 0,
+      current_price: priceMap.get(c.company_id) ?? null,
+    }));
+    setPreviewRows(computeModelAllocations(inputs, capital));
+  }, [selectedIds, capitalAmount, availableCompanies, priceMap]);
+
+  async function syncPrices() {
+    if (syncingPrices) return;
+    const tickers = availableCompanies
+      .filter((c) => selectedIds.has(c.company_id) && c.ticker)
+      .map((c) => c.ticker as string);
+    if (tickers.length === 0) return;
+
+    setSyncingPrices(true);
+    try {
+      const params = new URLSearchParams({ tickers: tickers.join(",") });
+      const res = await fetch(`/api/prices?${params}`);
+      const { prices } = await res.json();
+
+      // Build updated priceMap keyed by company_id
+      const next = new Map<string, number | null>(priceMap);
+      for (const c of availableCompanies) {
+        if (selectedIds.has(c.company_id) && c.ticker) {
+          next.set(c.company_id, prices[c.ticker] ?? null);
+        }
+      }
+      setPriceMap(next);
+      setLastSyncTime(
+        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      );
+    } finally {
+      setSyncingPrices(false);
+    }
+  }
 
   const filteredCompanies = availableCompanies
     .filter((c) => {
@@ -110,14 +157,6 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
     });
   }
 
-  function selectAllFiltered() {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      for (const c of filteredCompanies) next.add(c.company_id);
-      return next;
-    });
-  }
-
   function selectByConfidence(min: number) {
     setSelectedIds(
       new Set(
@@ -126,6 +165,14 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
           .map((c) => c.company_id)
       )
     );
+  }
+
+  function selectAllFiltered() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const c of filteredCompanies) next.add(c.company_id);
+      return next;
+    });
   }
 
   function clearSelection() {
@@ -153,7 +200,6 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
     const rowsToInsert = previewRows.filter((r) => r.shares !== null && r.shares > 0);
     setSubmitting(true);
     try {
-      // Create the portfolio
       const res = await fetch("/api/portfolios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -167,7 +213,6 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
       const { portfolio } = await res.json();
       const today = new Date().toISOString().slice(0, 10);
 
-      // Insert initial allocation transactions
       let deployed = 0;
       for (const row of rowsToInsert) {
         await fetch(`/api/portfolios/${portfolio.id}/transactions`, {
@@ -187,7 +232,6 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
       }
 
       setCreateResult({ positions: rowsToInsert.length, deployed });
-      // Notify parent after a brief moment so user sees success screen
       setTimeout(() => onCreated(portfolio), 1800);
     } finally {
       setSubmitting(false);
@@ -196,17 +240,14 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
 
   const canAdvanceToModel = portfolioType === "model" && name.trim().length > 0;
   const canCreateManual = portfolioType === "manual" && name.trim().length > 0;
+  const positionsCount = previewRows.filter((r) => r.shares !== null && r.shares > 0).length;
+  const priceUnavailableCount = previewRows.filter((r) => r.price_needed).length;
   const canCreateModel =
-    name.trim().length > 0 &&
-    Number(capitalAmount) > 0 &&
-    previewRows.filter((r) => r.shares !== null && r.shares > 0).length > 0;
+    name.trim().length > 0 && Number(capitalAmount) > 0 && positionsCount > 0;
+  const showPreviewTable =
+    selectedIds.size > 0 && Number(capitalAmount) > 0 && previewRows.length > 0;
 
-  const modalWidth =
-    createResult
-      ? "max-w-sm"
-      : step === "model_config"
-      ? "max-w-5xl"
-      : "max-w-lg";
+  const modalWidth = createResult ? "max-w-sm" : step === "model_config" ? "max-w-5xl" : "max-w-lg";
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-16">
@@ -234,28 +275,20 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
               <button
                 onClick={() => setPortfolioType("manual")}
                 className={`rounded border p-4 text-left transition-colors ${
-                  portfolioType === "manual"
-                    ? "border-signal bg-signal/10"
-                    : "border-line hover:border-signal"
+                  portfolioType === "manual" ? "border-signal bg-signal/10" : "border-line hover:border-signal"
                 }`}
               >
                 <div className="mb-1 font-medium text-[#e7e8ea]">Manual</div>
-                <div className="text-xs text-muted">
-                  Build position by position, your own sizing and timing
-                </div>
+                <div className="text-xs text-muted">Build position by position, your own sizing and timing</div>
               </button>
               <button
                 onClick={() => setPortfolioType("model")}
                 className={`rounded border p-4 text-left transition-colors ${
-                  portfolioType === "model"
-                    ? "border-signal bg-signal/10"
-                    : "border-line hover:border-signal"
+                  portfolioType === "model" ? "border-signal bg-signal/10" : "border-line hover:border-signal"
                 }`}
               >
                 <div className="mb-1 font-medium text-[#e7e8ea]">Model</div>
-                <div className="text-xs text-muted">
-                  Set a capital amount, select companies, system allocates by score
-                </div>
+                <div className="text-xs text-muted">Set a capital amount, select companies, system allocates by score</div>
               </button>
             </div>
 
@@ -428,29 +461,38 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                 )}
               </div>
 
-              {/* Preview table */}
+              {/* Preview panel */}
               <div className="min-w-0 flex-1">
                 {selectedIds.size === 0 ? (
                   <div className="flex h-full items-center justify-center rounded border border-dashed border-line py-8">
                     <p className="text-xs text-muted">Select companies to see allocation preview</p>
                   </div>
-                ) : loadingPreview ? (
-                  <div className="space-y-2">
-                    <p className="text-center text-xs text-muted">Fetching prices…</p>
-                    {Array.from(selectedIds).map((_, i) => (
-                      <div key={i} className="h-8 animate-pulse rounded bg-panelhi" />
-                    ))}
+                ) : Number(capitalAmount) <= 0 ? (
+                  <div className="flex h-full items-center justify-center rounded border border-dashed border-line py-8">
+                    <p className="text-xs text-muted">Enter a capital amount above</p>
                   </div>
-                ) : previewRows.length === 0 ? (
-                  <div className="flex items-center justify-center rounded border border-dashed border-line py-8">
-                    <p className="text-xs text-muted">
-                      {Number(capitalAmount) <= 0
-                        ? "Enter a capital amount above"
-                        : "No allocation data available"}
-                    </p>
-                  </div>
-                ) : (
+                ) : showPreviewTable ? (
                   <div className="overflow-hidden rounded border border-line">
+                    {/* Sync header */}
+                    <div className="flex items-center justify-between border-b border-line bg-panel px-3 py-2">
+                      <span className="text-[10px] uppercase tracking-wide text-muted">
+                        Allocation preview
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {lastSyncTime && (
+                          <span className="text-[10px] text-muted">Synced {lastSyncTime}</span>
+                        )}
+                        <button
+                          onClick={syncPrices}
+                          disabled={syncingPrices}
+                          className="flex items-center gap-1 rounded border border-line px-2 py-0.5 text-[10px] text-muted hover:border-signal hover:text-signal disabled:opacity-50"
+                        >
+                          <span>↻</span>
+                          {syncingPrices ? "Syncing…" : "Sync prices"}
+                        </button>
+                      </div>
+                    </div>
+
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-line bg-panel text-left text-[10px] uppercase tracking-wide text-muted">
@@ -463,7 +505,7 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                       </thead>
                       <tbody>
                         {previewRows.map((row) => (
-                          <tr key={row.company_id} className="border-b border-line/50 last:border-0">
+                          <tr key={row.company_id} className={`border-b border-line/50 last:border-0 ${syncingPrices ? "opacity-50" : ""}`}>
                             <td className="px-3 py-2">
                               <span className="font-medium text-[#e7e8ea]">{row.name}</span>{" "}
                               <span className="font-mono text-muted">{row.ticker}</span>
@@ -475,9 +517,7 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                               {fmt$(row.dollar_amount)}
                             </td>
                             <td className="px-3 py-2 text-right font-mono">
-                              {row.price_needed ? (
-                                <span className="text-muted">—</span>
-                              ) : row.shares === 0 ? (
+                              {row.price_needed || row.shares === 0 ? (
                                 <span className="text-muted">—</span>
                               ) : (
                                 <span className="text-[#e7e8ea]">{row.shares}</span>
@@ -485,11 +525,9 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                             </td>
                             <td className="px-3 py-2 text-right font-mono">
                               {row.price_needed ? (
-                                <span className="text-signal text-[10px]">price unavailable</span>
+                                <span className="text-[10px] text-signal">price unavailable</span>
                               ) : (
-                                <span className="text-muted">
-                                  ${Number(row.current_price).toFixed(2)}
-                                </span>
+                                <span className="text-muted">${Number(row.current_price).toFixed(2)}</span>
                               )}
                             </td>
                           </tr>
@@ -497,18 +535,15 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                       </tbody>
                     </table>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
 
             <div className="mt-5 flex items-center justify-between">
               <p className="text-xs text-muted">
-                {previewRows.filter((r) => r.shares !== null && r.shares > 0).length} positions will be
-                created
-                {previewRows.some((r) => r.price_needed) && (
-                  <span className="ml-2 text-signal">
-                    · {previewRows.filter((r) => r.price_needed).length} price unavailable
-                  </span>
+                {positionsCount} positions will be created
+                {priceUnavailableCount > 0 && (
+                  <span className="ml-2 text-signal">· {priceUnavailableCount} price unavailable</span>
                 )}
               </p>
               <button
