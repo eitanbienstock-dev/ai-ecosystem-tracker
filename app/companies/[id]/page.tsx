@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase, Company, Partnership, Catalyst, Score } from "@/lib/supabase";
 import { getLiveMarketCap, getLivePrice } from "@/lib/marketData";
-import { STATUS_DEFINITIONS, LEVERAGE_DEFINITIONS, TRAJECTORY_DEFINITIONS } from "@/lib/statusDefinitions";
+import { STATUS_DEFINITIONS, LEVERAGE_DEFINITIONS, TRAJECTORY_DEFINITIONS, INSIDER_SIGNAL_DEFINITIONS } from "@/lib/statusDefinitions";
 import DeleteCompanyButton from "../../DeleteCompanyButton";
 import { resolveCatalyst, markReviewed, dismissDigestFlag } from "@/lib/actions";
 import { formatDate } from "@/lib/format";
@@ -245,15 +245,15 @@ export default async function CompanyDetailPage({
           />
           <Row label="AI claims credibility" value={c.ai_claims_credibility ?? "not assessed"} />
           <Row
-            label="Comp tied to AI KPIs"
-            value={c.compensation_tied_to_ai === null ? "not disclosed" : c.compensation_tied_to_ai ? "Yes" : "No"}
+            label={
+              <span title={c.insider_transaction_signal ? INSIDER_SIGNAL_DEFINITIONS[c.insider_transaction_signal] : ""} className="cursor-help underline decoration-dotted decoration-muted underline-offset-2">
+                Insider transactions
+              </span>
+            }
+            value={c.insider_transaction_signal?.replace(/_/g, " ") ?? "not assessed"}
           />
-          {c.compensation_tied_to_ai === null && (
-            <p className="mb-2 text-[11px] text-muted">
-              Proxy statements rarely break out AI-specific KPI linkage as its own disclosed metric, it is
-              typically folded into broader innovation or strategic performance goals, which is why this is
-              hard to confirm for most companies rather than a gap specific to this one.
-            </p>
+          {c.insider_transaction_signal && (
+            <p className="mb-2 text-[11px] text-muted">{INSIDER_SIGNAL_DEFINITIONS[c.insider_transaction_signal]}</p>
           )}
           {c.capital_allocation_assessment && (
             <p className="mt-2 text-xs text-muted">{c.capital_allocation_assessment}</p>

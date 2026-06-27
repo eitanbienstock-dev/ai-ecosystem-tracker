@@ -15,8 +15,8 @@ export const LEVERAGE_DEFINITIONS: Record<string, string> = {
     "Real switching costs exist. Once embedded, a customer or partner would find it expensive or slow to move to a competitor.",
   commoditized:
     "Limited switching costs. A customer or partner could move to a competitor without much friction.",
-  undetermined:
-    "Genuine evidence on both sides, real switching-cost signals alongside real displacement risk, not yet resolved either way.",
+  contested:
+    "Assessed and genuinely balanced: real switching-cost signals alongside real displacement risk, evidence pointing both ways rather than not yet looked at.",
 };
 
 export const TRAJECTORY_DEFINITIONS: Record<string, string> = {
@@ -26,4 +26,13 @@ export const TRAJECTORY_DEFINITIONS: Record<string, string> = {
     "Holding steady. No clear build-out or erosion happening right now.",
   weakening:
     "Losing ground. Partners pulling back, scope narrowing, or competitive encroachment visibly increasing.",
+};
+
+export const INSIDER_SIGNAL_DEFINITIONS: Record<string, string> = {
+  net_buying:
+    "Insiders were net buyers over the trailing window per Form 4 filings. The strongest management-conviction signal available, since open-market purchases are rare and discretionary.",
+  net_selling:
+    "Insiders were net sellers over the trailing window. Common and often routine (diversification, pre-scheduled 10b5-1 plans), so weigh against context rather than reading as automatic negative.",
+  mixed_or_neutral:
+    "No clear net direction, or activity dominated by routine vesting and pre-scheduled plans rather than discretionary open-market decisions.",
 };
