@@ -20,6 +20,12 @@ body {
   scrollbar-color: #2a2d33 #0e0f11;
 }
 
+/* Horizontal scroll for data tables on mobile */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .input {
   width: 100%;
   border-radius: 4px;
