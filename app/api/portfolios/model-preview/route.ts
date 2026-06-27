@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { computeModelAllocations, AllocationInput } from '@/lib/portfolioAllocation';
+import { getLivePrice } from '@/lib/marketData';
 
 function latestScoresByCompany(
   scoreRows: { company_id: string; composite_score: number | null; confidence_score: number | null; scored_at: string }[]
@@ -21,7 +22,7 @@ function latestScoresByCompany(
 export async function GET() {
   const { data: companies, error: compError } = await supabase
     .from('companies')
-    .select('id, name, ticker, market_cap')
+    .select('id, name, ticker')
     .in('research_status', ['watched', 'holding'])
     .order('name', { ascending: true });
 
@@ -48,10 +49,6 @@ export async function GET() {
       ticker: c.ticker,
       composite_score: scores?.composite_score ?? null,
       confidence_score: scores?.confidence_score ?? null,
-      // market_cap is used as a price proxy here.
-      // For accurate per-share allocation, Finnhub live price should be fetched
-      // client-side and passed in via the POST body instead.
-      current_price: c.market_cap ?? null,
     };
   });
 
@@ -72,7 +69,7 @@ export async function POST(request: NextRequest) {
 
   const { data: companies, error: compError } = await supabase
     .from('companies')
-    .select('id, name, ticker, market_cap')
+    .select('id, name, ticker')
     .in('id', company_ids);
 
   if (compError) return NextResponse.json({ error: compError.message }, { status: 500 });
@@ -87,7 +84,20 @@ export async function POST(request: NextRequest) {
 
   const scoreMap = latestScoresByCompany(scoreRows ?? []);
 
-  const inputs: AllocationInput[] = (companies ?? []).map((c) => {
+  // Fetch live share prices from Finnhub in parallel for all tickers
+  const companyList = companies ?? [];
+  const priceResults = await Promise.allSettled(
+    companyList.map((c) => (c.ticker ? getLivePrice(c.ticker) : Promise.resolve(null)))
+  );
+  const priceMap = new Map<string, number>();
+  companyList.forEach((c, i) => {
+    const result = priceResults[i];
+    if (result.status === 'fulfilled' && result.value !== null) {
+      priceMap.set(c.id, result.value.price);
+    }
+  });
+
+  const inputs: AllocationInput[] = companyList.map((c) => {
     const scores = scoreMap.get(c.id);
     return {
       company_id: c.id,
@@ -95,10 +105,7 @@ export async function POST(request: NextRequest) {
       ticker: c.ticker,
       composite_score: scores?.composite_score ?? 0,
       confidence_score: scores?.confidence_score ?? 0,
-      // market_cap is used as a price proxy here.
-      // For accurate per-share allocation, Finnhub live price should be fetched
-      // client-side and passed in instead.
-      current_price: c.market_cap ?? null,
+      current_price: priceMap.get(c.id) ?? null,
     };
   });
 

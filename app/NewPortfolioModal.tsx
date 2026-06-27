@@ -16,7 +16,6 @@ type CompanyOption = {
   ticker: string | null;
   composite_score: number | null;
   confidence_score: number | null;
-  current_price: number | null;
 };
 
 type PreviewRow = {
@@ -436,7 +435,8 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                     <p className="text-xs text-muted">Select companies to see allocation preview</p>
                   </div>
                 ) : loadingPreview ? (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
+                    <p className="text-center text-xs text-muted">Fetching prices…</p>
                     {Array.from(selectedIds).map((_, i) => (
                       <div key={i} className="h-8 animate-pulse rounded bg-panelhi" />
                     ))}
@@ -476,17 +476,21 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                             </td>
                             <td className="px-3 py-2 text-right font-mono">
                               {row.price_needed ? (
-                                <span className="text-signal">price needed</span>
+                                <span className="text-muted">—</span>
                               ) : row.shares === 0 ? (
                                 <span className="text-muted">—</span>
                               ) : (
                                 <span className="text-[#e7e8ea]">{row.shares}</span>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono text-muted">
-                              {row.current_price != null
-                                ? `$${Number(row.current_price).toLocaleString()}`
-                                : "—"}
+                            <td className="px-3 py-2 text-right font-mono">
+                              {row.price_needed ? (
+                                <span className="text-signal text-[10px]">price unavailable</span>
+                              ) : (
+                                <span className="text-muted">
+                                  ${Number(row.current_price).toFixed(2)}
+                                </span>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -503,7 +507,7 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                 created
                 {previewRows.some((r) => r.price_needed) && (
                   <span className="ml-2 text-signal">
-                    · {previewRows.filter((r) => r.price_needed).length} need live price
+                    · {previewRows.filter((r) => r.price_needed).length} price unavailable
                   </span>
                 )}
               </p>
