@@ -1,0 +1,64 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { data, error } = await supabase
+    .from('portfolios')
+    .select('*')
+    .eq('id', params.id)
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+  return NextResponse.json({ portfolio: data });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const body = await request.json();
+  const { name, description } = body;
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (name !== undefined) updates.name = name;
+  if (description !== undefined) updates.description = description;
+
+  const { data, error } = await supabase
+    .from('portfolios')
+    .update(updates)
+    .eq('id', params.id)
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ portfolio: data });
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { count, error: countError } = await supabase
+    .from('portfolio_transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('portfolio_id', params.id);
+
+  if (countError) return NextResponse.json({ error: countError.message }, { status: 500 });
+  if (count && count > 0) {
+    return NextResponse.json(
+      { error: 'Cannot delete a portfolio that has transactions' },
+      { status: 409 }
+    );
+  }
+
+  const { error } = await supabase
+    .from('portfolios')
+    .delete()
+    .eq('id', params.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return new NextResponse(null, { status: 204 });
+}
