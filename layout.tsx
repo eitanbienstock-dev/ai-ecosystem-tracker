@@ -52,6 +52,12 @@ export default function RootLayout({
                 Coverage map
               </Link>
               <Link
+                href="/infrastructure"
+                className="rounded border border-line bg-panelhi px-3 py-1.5 text-sm font-medium text-[#e7e8ea] hover:border-signal hover:text-signal"
+              >
+                AI stack
+              </Link>
+              <Link
                 href="/companies/new"
                 className="rounded border border-line bg-panelhi px-3 py-1.5 text-sm font-medium text-[#e7e8ea] hover:border-signal hover:text-signal"
               >

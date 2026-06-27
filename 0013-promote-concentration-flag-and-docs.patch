@@ -1,0 +1,139 @@
+From e83e2539b0935c484eaf9047e53129644a0319e1 Mon Sep 17 00:00:00 2001
+From: Eitan Bienstock <eitan@ai-ecosystem-tracker.local>
+Date: Wed, 24 Jun 2026 04:40:14 +0000
+Subject: [PATCH 1/2] Add category and partner overlap concentration flag to
+ the promote page
+
+---
+ app/companies/[id]/promote/page.tsx | 57 +++++++++++++++++++++++++++--
+ 1 file changed, 54 insertions(+), 3 deletions(-)
+
+diff --git a/app/companies/[id]/promote/page.tsx b/app/companies/[id]/promote/page.tsx
+index 04da078..2d79d9a 100644
+--- a/app/companies/[id]/promote/page.tsx
++++ b/app/companies/[id]/promote/page.tsx
+@@ -1,4 +1,4 @@
+-import { supabase, Company, Score } from "@/lib/supabase";
++import { supabase, Company, Score, Partnership } from "@/lib/supabase";
+ import { promoteToInvested } from "@/lib/actions";
+ import { latestScore } from "@/lib/portfolio";
+ import { notFound } from "next/navigation";
+@@ -22,8 +22,12 @@ export default async function PromotePage({ params }: { params: { id: string } }
+     );
+   }
+ 
+-  const { data: invested } = await supabase.from("companies").select("id").eq("research_status", "invested");
+-  const investedIds = (invested ?? []).map((x) => x.id);
++  const { data: investedCompanies } = await supabase
++    .from("companies")
++    .select("id, name, ai_category")
++    .eq("research_status", "invested");
++  const invested = (investedCompanies ?? []) as Pick<Company, "id" | "name" | "ai_category">[];
++  const investedIds = invested.map((x) => x.id);
+ 
+   const { data: scoreRows } = await supabase
+     .from("scores")
+@@ -43,6 +47,35 @@ export default async function PromotePage({ params }: { params: { id: string } }
+   const sum = existingScores.reduce((a, b) => a + b, 0) + candidateScore;
+   const previewTarget = sum > 0 ? Math.round((candidateScore / sum) * 100) : 0;
+ 
++  const categoryOverlap = c.ai_category
++    ? invested.filter((h) => h.ai_category === c.ai_category)
++    : [];
++
++  const { data: allPartnerships } = await supabase
++    .from("partnerships")
++    .select("*")
++    .in("company_id", [...investedIds, c.id]);
++  const candidatePartners = new Set(
++    ((allPartnerships ?? []) as Partnership[])
++      .filter((p) => p.company_id === c.id)
++      .map((p) => p.partner_name)
++  );
++  const partnerOverlap: { partner: string; holdings: string[] }[] = [];
++  if (candidatePartners.size > 0) {
++    const byPartner = new Map<string, Set<string>>();
++    for (const p of (allPartnerships ?? []) as Partnership[]) {
++      if (p.company_id === c.id || !candidatePartners.has(p.partner_name)) continue;
++      const holding = invested.find((h) => h.id === p.company_id);
++      if (!holding) continue;
++      (byPartner.get(p.partner_name) ?? byPartner.set(p.partner_name, new Set()).get(p.partner_name)!).add(
++        holding.name
++      );
++    }
++    for (const [partner, holdings] of byPartner.entries()) {
++      partnerOverlap.push({ partner, holdings: Array.from(holdings) });
++    }
++  }
++
+   const boundPromote = async (formData: FormData) => {
+     "use server";
+     await promoteToInvested(params.id, formData);
+@@ -61,6 +94,24 @@ export default async function PromotePage({ params }: { params: { id: string } }
+           just worth confirming the underlying data is solid enough before sizing a real position.
+         </p>
+       )}
++      {categoryOverlap.length > 0 && (
++        <p className="mb-3 rounded bg-signal/10 p-2 text-xs text-signal">
++          Same AI category as {categoryOverlap.map((h) => h.name).join(", ")}, already in the portfolio. Not
++          blocked, just a concentration flag worth weighing alongside conviction in this specific name.
++        </p>
++      )}
++      {partnerOverlap.length > 0 && (
++        <div className="mb-3 rounded bg-signal/10 p-2 text-xs text-signal">
++          <p>Shares a disclosed partner with current holdings:</p>
++          <ul className="ml-3 list-disc">
++            {partnerOverlap.map((row) => (
++              <li key={row.partner}>
++                {row.partner}, also disclosed by {row.holdings.join(", ")}
++              </li>
++            ))}
++          </ul>
++        </div>
++      )}
+       <p className="mb-6 text-sm text-muted">
+         Suggested target weight if added now:{" "}
+         <span className="font-mono font-medium text-[#e7e8ea]">{previewTarget}%</span>, recalculated across all{" "}
+-- 
+2.43.0
+
+
+From dbcc272d0580d587e33ef46d6a8b9bcd9c74a248 Mon Sep 17 00:00:00 2001
+From: Eitan Bienstock <eitan@ai-ecosystem-tracker.local>
+Date: Wed, 24 Jun 2026 04:41:11 +0000
+Subject: [PATCH 2/2] Document the promotion-time concentration flag in the
+ methodology page
+
+---
+ app/methodology/page.tsx | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/app/methodology/page.tsx b/app/methodology/page.tsx
+index 58b48fa..97d4b07 100644
+--- a/app/methodology/page.tsx
++++ b/app/methodology/page.tsx
+@@ -132,6 +132,21 @@ export default function MethodologyPage() {
+         </p>
+       </section>
+ 
++      <section className="mb-8">
++        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
++          Promotion-time concentration flag
++        </h2>
++        <p className="text-sm leading-relaxed text-[#cfd1d5]">
++          The same promote screen checks the candidate against current holdings on two dimensions: whether
++          any invested holding already shares its AI category, and whether any invested holding has a
++          disclosed relationship with the same named partner. Both are non-blocking flags, not a calculated
++          score, since most overlap in this kind of book is structural rather than alarming, an AI
++          infrastructure thesis will naturally cluster around the same handful of hyperscalers and chip
++          suppliers. The flag exists so that clustering is visible at the moment of committing capital,
++          not to discourage it outright.
++        </p>
++      </section>
++
+       <section className="mb-8">
+         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Workflow states</h2>
+         <p className="text-sm leading-relaxed text-[#cfd1d5]">
+-- 
+2.43.0
+

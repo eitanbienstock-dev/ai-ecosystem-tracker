@@ -1,0 +1,253 @@
+From 4f670851f89d0a2394393acf1862e832ae5ae2dc Mon Sep 17 00:00:00 2001
+From: Eitan Bienstock <eitan@ai-ecosystem-tracker.local>
+Date: Thu, 25 Jun 2026 10:55:53 +0000
+Subject: [PATCH] Add SOXX sector benchmark alongside S&P 500 in benchmark
+ comparison
+
+---
+ app/methodology/page.tsx | 22 +++++++-----
+ app/scorecard/page.tsx   | 76 ++++++++++++++++++++++++++++++++++++----
+ lib/actions.ts           |  4 +++
+ lib/portfolio.ts         | 21 +++++++++--
+ lib/supabase.ts          |  2 ++
+ 5 files changed, 108 insertions(+), 17 deletions(-)
+
+diff --git a/app/methodology/page.tsx b/app/methodology/page.tsx
+index 2311ead..0b1dc96 100644
+--- a/app/methodology/page.tsx
++++ b/app/methodology/page.tsx
+@@ -263,14 +263,20 @@ export default function MethodologyPage() {
+           Benchmark comparison
+         </h2>
+         <p className="text-sm leading-relaxed text-[#cfd1d5]">
+-          Each invested holding is compared against the S&amp;P 500 over the same window, from that
+-          holding&apos;s own entry date to now, not a shared calendar period, since capital was deployed on
+-          different dates and a single shared window would misrepresent the comparison for holdings entered
+-          at different times. The benchmark price is captured at the moment of entry, the same discipline
+-          already applied to a holding&apos;s own entry price, and compared against its live price today. The
+-          portfolio-level number weights each holding by its current position value. This is the explicit
+-          test of the standing goal: deep ecosystem intelligence should produce returns exceeding the broad
+-          market, not just positive returns in isolation. Shown on the{" "}
++          Each invested holding is compared against both the S&amp;P 500 and the SOXX semiconductor index
++          over the same window, from that holding&apos;s own entry date to now, not a shared calendar
++          period, since capital was deployed on different dates and a single shared window would
++          misrepresent the comparison for holdings entered at different times. Both benchmark prices are
++          captured at the moment of entry, the same discipline already applied to a holding&apos;s own
++          entry price, and compared against its live price today. The sector benchmark exists because this
++          book is deliberately concentrated in AI infrastructure, semiconductors most of all, and beating
++          the S&amp;P 500 during an AI-driven semiconductor boom proves very little about selection skill
++          on its own. Beating SOXX specifically, the sector that is actually driving most of the book's
++          concentration, is the more honest test. The portfolio-level number weights each holding by its
++          current position value. This is the explicit test of the standing goal: deep ecosystem
++          intelligence should produce returns exceeding the broad market and the sector it sits in, not
++          just positive returns in isolation, and not just a sector tailwind mistaken for skill. Shown on
++          the{" "}
+           <Link href="/scorecard" className="text-signal hover:underline">
+             Scorecard
+           </Link>
+diff --git a/app/scorecard/page.tsx b/app/scorecard/page.tsx
+index e6a5872..6a4fe60 100644
+--- a/app/scorecard/page.tsx
++++ b/app/scorecard/page.tsx
+@@ -52,13 +52,35 @@ export default async function ScorecardPage() {
+       if (p) liveBenchmarkByTicker.set(t, p.price);
+     })
+   );
++  const sectorBenchmarkTickers = Array.from(
++    new Set(invested.map((c) => c.sector_benchmark_ticker).filter(Boolean) as string[])
++  );
++  const liveSectorBenchmarkByTicker = new Map<string, number>();
++  await Promise.all(
++    sectorBenchmarkTickers.map(async (t) => {
++      const p = await getLivePrice(t);
++      if (p) liveSectorBenchmarkByTicker.set(t, p.price);
++    })
++  );
+ 
+   const benchmarkRows = invested.map((c) => {
+     const livePrice = c.ticker ? liveByTicker.get(c.ticker) ?? null : null;
+     const liveBenchmarkPrice = c.benchmark_ticker ? liveBenchmarkByTicker.get(c.benchmark_ticker) ?? null : null;
+-    const { holdingReturnPct, benchmarkReturnPct, excessPct } = computeBenchmarkRow(c, livePrice, liveBenchmarkPrice);
++    const liveSectorBenchmarkPrice = c.sector_benchmark_ticker
++      ? liveSectorBenchmarkByTicker.get(c.sector_benchmark_ticker) ?? null
++      : null;
++    const { holdingReturnPct, benchmarkReturnPct, excessPct, sectorBenchmarkReturnPct, sectorExcessPct } =
++      computeBenchmarkRow(c, livePrice, liveBenchmarkPrice, liveSectorBenchmarkPrice);
+     const value = (c.shares_held ?? 0) * (livePrice ?? c.entry_price ?? 0);
+-    return { company: c, holdingReturnPct, benchmarkReturnPct, excessPct, value };
++    return {
++      company: c,
++      holdingReturnPct,
++      benchmarkReturnPct,
++      excessPct,
++      sectorBenchmarkReturnPct,
++      sectorExcessPct,
++      value,
++    };
+   });
+   const totalBenchmarkableValue = benchmarkRows
+     .filter((r) => r.excessPct !== null)
+@@ -75,6 +97,15 @@ export default async function ScorecardPage() {
+           .filter((r) => r.excessPct !== null)
+           .reduce((a, r) => a + (r.benchmarkReturnPct ?? 0) * (r.value / totalBenchmarkableValue), 0)
+       : null;
++  const totalSectorBenchmarkableValue = benchmarkRows
++    .filter((r) => r.sectorExcessPct !== null)
++    .reduce((a, r) => a + r.value, 0);
++  const weightedSectorBenchmarkReturn =
++    totalSectorBenchmarkableValue > 0
++      ? benchmarkRows
++          .filter((r) => r.sectorExcessPct !== null)
++          .reduce((a, r) => a + (r.sectorBenchmarkReturnPct ?? 0) * (r.value / totalSectorBenchmarkableValue), 0)
++      : null;
+ 
+   const allScores = (scores ?? []) as Score[];
+ 
+@@ -186,7 +217,13 @@ export default async function ScorecardPage() {
+                 </p>
+               </div>
+               <div>
+-                <p className="text-[10px] text-muted">Excess</p>
++                <p className="text-[10px] text-muted">SOXX semiconductor index, same windows</p>
++                <p className="font-mono text-2xl font-bold text-muted">
++                  {weightedSectorBenchmarkReturn !== null ? `${weightedSectorBenchmarkReturn >= 0 ? "+" : ""}${weightedSectorBenchmarkReturn.toFixed(1)}%` : "not yet available"}
++                </p>
++              </div>
++              <div>
++                <p className="text-[10px] text-muted">Excess vs S&amp;P 500</p>
+                 <p
+                   className={`font-mono text-2xl font-bold ${
+                     weightedHoldingReturn !== null && weightedBenchmarkReturn !== null
+@@ -201,6 +238,22 @@ export default async function ScorecardPage() {
+                     : "not yet available"}
+                 </p>
+               </div>
++              <div>
++                <p className="text-[10px] text-muted">Excess vs sector</p>
++                <p
++                  className={`font-mono text-2xl font-bold ${
++                    weightedHoldingReturn !== null && weightedSectorBenchmarkReturn !== null
++                      ? weightedHoldingReturn - weightedSectorBenchmarkReturn >= 0
++                        ? "text-rise"
++                        : "text-fall"
++                      : "text-muted"
++                  }`}
++                >
++                  {weightedHoldingReturn !== null && weightedSectorBenchmarkReturn !== null
++                    ? `${weightedHoldingReturn - weightedSectorBenchmarkReturn >= 0 ? "+" : ""}${(weightedHoldingReturn - weightedSectorBenchmarkReturn).toFixed(1)}pts`
++                    : "not yet available"}
++                </p>
++              </div>
+             </div>
+             <div className="space-y-1">
+               {benchmarkRows.map((r) => (
+@@ -215,13 +268,24 @@ export default async function ScorecardPage() {
+                       {" "}({r.excessPct >= 0 ? "+" : ""}{r.excessPct.toFixed(1)}pts)
+                     </span>
+                   )}
++                  {" / vs "}
++                  {r.company.sector_benchmark_ticker ?? "sector"}{" "}
++                  {r.sectorBenchmarkReturnPct !== null ? `${r.sectorBenchmarkReturnPct >= 0 ? "+" : ""}${r.sectorBenchmarkReturnPct.toFixed(1)}%` : "not yet available"}
++                  {r.sectorExcessPct !== null && (
++                    <span className={r.sectorExcessPct >= 0 ? "text-rise" : "text-fall"}>
++                      {" "}({r.sectorExcessPct >= 0 ? "+" : ""}{r.sectorExcessPct.toFixed(1)}pts)
++                    </span>
++                  )}
+                 </p>
+               ))}
+             </div>
+             <p className="mt-3 text-[11px] text-muted">
+-              Each holding is compared against the S&amp;P 500 over the same window, from that holding&apos;s own
+-              entry date to now, not a shared calendar period, since capital was deployed on different dates.
+-              The aggregate weights each holding by its current position value.
++              Each holding is compared against both the S&amp;P 500 and the SOXX semiconductor index over the
++              same window, from that holding&apos;s own entry date to now, not a shared calendar period, since
++              capital was deployed on different dates. The sector benchmark exists because a concentrated AI
++              infrastructure book can beat the broad market just by being in a hot sector during a sector
++              boom, that alone is not evidence of selection skill. Beating SOXX specifically is a more honest
++              signal. The aggregate weights each holding by its current position value.
+             </p>
+           </>
+         )}
+diff --git a/lib/actions.ts b/lib/actions.ts
+index 0a0d43b..c5b4938 100644
+--- a/lib/actions.ts
++++ b/lib/actions.ts
+@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
+ import { getLivePrice } from "@/lib/marketData";
+ 
+ const BENCHMARK_TICKER = "SPY";
++const SECTOR_BENCHMARK_TICKER = "SOXX";
+ 
+ const ORG_ID = process.env.DEFAULT_ORG_ID as string;
+ 
+@@ -94,6 +95,7 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
+   const today = new Date().toISOString().slice(0, 10);
+ 
+   const benchmarkQuote = await getLivePrice(BENCHMARK_TICKER);
++  const sectorBenchmarkQuote = await getLivePrice(SECTOR_BENCHMARK_TICKER);
+ 
+   const { error: updateError } = await supabase
+     .from("companies")
+@@ -104,6 +106,8 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
+       shares_held: shares,
+       benchmark_ticker: BENCHMARK_TICKER,
+       benchmark_price_at_entry: benchmarkQuote?.price ?? null,
++      sector_benchmark_ticker: SECTOR_BENCHMARK_TICKER,
++      sector_benchmark_price_at_entry: sectorBenchmarkQuote?.price ?? null,
+       last_reviewed_at: today,
+       updated_at: new Date().toISOString(),
+     })
+diff --git a/lib/portfolio.ts b/lib/portfolio.ts
+index 30ae537..da8d267 100644
+--- a/lib/portfolio.ts
++++ b/lib/portfolio.ts
+@@ -64,8 +64,15 @@ export function daysHeld(entryDate: string | null): number | null {
+ export function computeBenchmarkRow(
+   c: Company,
+   livePrice: number | null,
+-  liveBenchmarkPrice: number | null
+-): { holdingReturnPct: number | null; benchmarkReturnPct: number | null; excessPct: number | null } {
++  liveBenchmarkPrice: number | null,
++  liveSectorBenchmarkPrice: number | null = null
++): {
++  holdingReturnPct: number | null;
++  benchmarkReturnPct: number | null;
++  excessPct: number | null;
++  sectorBenchmarkReturnPct: number | null;
++  sectorExcessPct: number | null;
++} {
+   const holdingReturnPct =
+     c.entry_price && livePrice ? ((livePrice - c.entry_price) / c.entry_price) * 100 : null;
+   const benchmarkReturnPct =
+@@ -74,5 +81,13 @@ export function computeBenchmarkRow(
+       : null;
+   const excessPct =
+     holdingReturnPct !== null && benchmarkReturnPct !== null ? holdingReturnPct - benchmarkReturnPct : null;
+-  return { holdingReturnPct, benchmarkReturnPct, excessPct };
++  const sectorBenchmarkReturnPct =
++    c.sector_benchmark_price_at_entry && liveSectorBenchmarkPrice
++      ? ((liveSectorBenchmarkPrice - c.sector_benchmark_price_at_entry) / c.sector_benchmark_price_at_entry) * 100
++      : null;
++  const sectorExcessPct =
++    holdingReturnPct !== null && sectorBenchmarkReturnPct !== null
++      ? holdingReturnPct - sectorBenchmarkReturnPct
++      : null;
++  return { holdingReturnPct, benchmarkReturnPct, excessPct, sectorBenchmarkReturnPct, sectorExcessPct };
+ }
+diff --git a/lib/supabase.ts b/lib/supabase.ts
+index 693a42b..5fdaa9a 100644
+--- a/lib/supabase.ts
++++ b/lib/supabase.ts
+@@ -51,6 +51,8 @@ export type Company = {
+   entry_price: number | null;
+   benchmark_ticker: string | null;
+   benchmark_price_at_entry: number | null;
++  sector_benchmark_ticker: string | null;
++  sector_benchmark_price_at_entry: number | null;
+   exit_date: string | null;
+   exit_price: number | null;
+   target_weight_override_pct: number | null;
+-- 
+2.43.0
+

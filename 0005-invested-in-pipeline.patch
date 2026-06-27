@@ -1,0 +1,134 @@
+From eb872b6860cd11e46b34ef81140082a64cd749b2 Mon Sep 17 00:00:00 2001
+From: Eitan Bienstock <eitan@ai-ecosystem-tracker.local>
+Date: Tue, 23 Jun 2026 19:20:18 +0000
+Subject: [PATCH] Show invested companies in the Watched Pipeline alongside
+ candidates, ranked in the same sequence
+
+---
+ app/PipelineTable.tsx | 25 ++++++++++++++++++-------
+ app/page.tsx          |  4 ++--
+ lib/actions.ts        | 14 +++++++-------
+ 3 files changed, 27 insertions(+), 16 deletions(-)
+
+diff --git a/app/PipelineTable.tsx b/app/PipelineTable.tsx
+index ab6fb08..77ef6af 100644
+--- a/app/PipelineTable.tsx
++++ b/app/PipelineTable.tsx
+@@ -139,13 +139,24 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
+                 </td>
+                 <td className="px-4 py-3 relative">
+                   <div className="flex justify-end gap-2">
+-                    <Link
+-                      href={`/companies/${c.id}/promote`}
+-                      className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
+-                    >
+-                      Promote to invested
+-                    </Link>
+-                    <ArchiveControl companyId={c.id} />
++                    {c.research_status === "invested" ? (
++                      <span
++                        className="badge bg-rise/15 text-rise"
++                        title="Already invested, use Trim or Exit on the portfolio card above to change this position"
++                      >
++                        invested
++                      </span>
++                    ) : (
++                      <>
++                        <Link
++                          href={`/companies/${c.id}/promote`}
++                          className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
++                        >
++                          Promote to invested
++                        </Link>
++                        <ArchiveControl companyId={c.id} />
++                      </>
++                    )}
+                   </div>
+                 </td>
+               </tr>
+diff --git a/app/page.tsx b/app/page.tsx
+index 9a12c33..6bc6d93 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -19,7 +19,7 @@ export default async function HomePage() {
+ 
+   const list = (companies ?? []) as Company[];
+   const invested = list.filter((c) => c.research_status === "invested");
+-  const pipeline = list.filter((c) => c.research_status === "pipeline");
++  const pipeline = list.filter((c) => c.research_status === "pipeline" || c.research_status === "invested");
+   const archive = list.filter((c) => c.research_status === "archived");
+ 
+   const { data: scoreRows } = await supabase.from("scores").select("*").order("scored_at", { ascending: true });
+@@ -124,7 +124,7 @@ export default async function HomePage() {
+       <div className="mb-10">
+         <div className="mb-3">
+           <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Watched Pipeline</h1>
+-          <p className="text-xs text-muted">manually ranked, use the arrows to move a company up or down, or click Composite or Confidence to preview a different order</p>
++          <p className="text-xs text-muted">includes current holdings alongside candidates, manually ranked, use the arrows to move a company up or down, or click Composite or Confidence to preview a different order</p>
+         </div>
+         {pipeline.length === 0 ? (
+           <div className="rounded border border-dashed border-line py-10 text-center">
+diff --git a/lib/actions.ts b/lib/actions.ts
+index f898929..070098d 100644
+--- a/lib/actions.ts
++++ b/lib/actions.ts
+@@ -22,7 +22,7 @@ export async function createCompany(formData: FormData) {
+     const { data: maxRow } = await supabase
+       .from("companies")
+       .select("pipeline_order")
+-      .eq("research_status", "pipeline")
++      .in("research_status", ["pipeline", "invested"])
+       .order("pipeline_order", { ascending: false })
+       .limit(1)
+       .single();
+@@ -75,7 +75,6 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
+     .from("companies")
+     .update({
+       research_status: "invested",
+-      pipeline_order: null,
+       entry_date: today,
+       entry_price: entryPrice,
+       shares_held: shares,
+@@ -185,7 +184,7 @@ export async function movePipelineRank(companyId: string, direction: "up" | "dow
+   const { data: rows, error: fetchError } = await supabase
+     .from("companies")
+     .select("id, pipeline_order")
+-    .eq("research_status", "pipeline")
++    .in("research_status", ["pipeline", "invested"])
+     .order("pipeline_order", { ascending: true });
+   if (fetchError) throw new Error(fetchError.message);
+ 
+@@ -236,7 +235,7 @@ export async function restoreToPipeline(companyId: string, _formData: FormData)
+   const { data: maxRow } = await supabase
+     .from("companies")
+     .select("pipeline_order")
+-    .eq("research_status", "pipeline")
++    .in("research_status", ["pipeline", "invested"])
+     .order("pipeline_order", { ascending: false })
+     .limit(1)
+     .single();
+@@ -311,7 +310,7 @@ export async function updateCompany(id: string, formData: FormData) {
+     const { data: maxRow } = await supabase
+       .from("companies")
+       .select("pipeline_order")
+-      .eq("research_status", "pipeline")
++      .in("research_status", ["pipeline", "invested"])
+       .order("pipeline_order", { ascending: false })
+       .limit(1)
+       .single();
+@@ -323,9 +322,10 @@ export async function updateCompany(id: string, formData: FormData) {
+       throw new Error("An archive reason is required when archiving a company.");
+     }
+     archiveReason = archiveReasonInput || archiveReason;
+-  } else if (newStatus !== "pipeline") {
+-    pipelineOrder = null;
+   }
++  // newStatus === "invested" falls through here deliberately: pipelineOrder
++  // and archiveReason both keep their current values, since an invested
++  // company stays ranked in the combined pipeline/invested list.
+ 
+   const payload = {
+     name: String(formData.get("name") || ""),
+-- 
+2.43.0
+

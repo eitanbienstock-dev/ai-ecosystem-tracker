@@ -1,0 +1,393 @@
+From 4cfe43b37fce566dafc0892d08992023a8623afd Mon Sep 17 00:00:00 2001
+From: Eitan Bienstock <eitan@ai-ecosystem-tracker.local>
+Date: Tue, 23 Jun 2026 16:26:06 +0000
+Subject: [PATCH] Require and surface archive reasons; give Archive section
+ full parity with Pipeline rows; clear stale reasons on restore
+
+---
+ app/ArchiveControl.tsx              | 57 +++++++++++++++++
+ app/ArchiveSection.tsx              | 95 +++++++++++++++++++----------
+ app/PipelineTable.tsx               | 19 ++----
+ app/companies/CompanyFormFields.tsx | 13 ++++
+ app/page.tsx                        |  4 +-
+ lib/actions.ts                      | 25 +++++++-
+ lib/supabase.ts                     |  2 +-
+ 7 files changed, 163 insertions(+), 52 deletions(-)
+ create mode 100644 app/ArchiveControl.tsx
+
+diff --git a/app/ArchiveControl.tsx b/app/ArchiveControl.tsx
+new file mode 100644
+index 0000000..51ca1a2
+--- /dev/null
++++ b/app/ArchiveControl.tsx
+@@ -0,0 +1,57 @@
++"use client";
++
++import { useState } from "react";
++import { archiveCompany } from "@/lib/actions";
++
++export default function ArchiveControl({ companyId }: { companyId: string }) {
++  const [open, setOpen] = useState(false);
++  const [reason, setReason] = useState("");
++
++  if (!open) {
++    return (
++      <button
++        type="button"
++        onClick={() => setOpen(true)}
++        className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-fall hover:text-fall"
++      >
++        Archive
++      </button>
++    );
++  }
++
++  return (
++    <div className="absolute right-4 z-10 mt-1 w-72 rounded border border-line bg-panelhi p-3 shadow-lg">
++      <p className="mb-1.5 text-xs font-medium text-[#e7e8ea]">Why is this being archived?</p>
++      <textarea
++        autoFocus
++        value={reason}
++        onChange={(e) => setReason(e.target.value)}
++        rows={3}
++        className="input mb-2 w-full text-xs"
++        placeholder="Required, shows up on the archive list"
++      />
++      <div className="flex justify-end gap-2">
++        <button
++          type="button"
++          onClick={() => {
++            setOpen(false);
++            setReason("");
++          }}
++          className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
++        >
++          Cancel
++        </button>
++        <form action={archiveCompany.bind(null, companyId)}>
++          <input type="hidden" name="archive_reason" value={reason} />
++          <button
++            type="submit"
++            disabled={!reason.trim()}
++            className="rounded border border-fall bg-fall/20 px-3 py-1 text-xs text-fall hover:bg-fall/30 disabled:opacity-40"
++          >
++            Confirm archive
++          </button>
++        </form>
++      </div>
++    </div>
++  );
++}
+diff --git a/app/ArchiveSection.tsx b/app/ArchiveSection.tsx
+index 942ceac..0802c45 100644
+--- a/app/ArchiveSection.tsx
++++ b/app/ArchiveSection.tsx
+@@ -1,13 +1,16 @@
+ "use client";
+ 
+ import { useState } from "react";
+-import { Company } from "@/lib/supabase";
++import Link from "next/link";
++import { Company, Score } from "@/lib/supabase";
+ import { restoreToPipeline } from "@/lib/actions";
+ 
+-export default function ArchiveSection({ companies }: { companies: Company[] }) {
++type Row = { company: Company; score: Score | undefined };
++
++export default function ArchiveSection({ rows }: { rows: Row[] }) {
+   const [open, setOpen] = useState(false);
+-  const exitedCount = companies.filter((c) => c.exit_date).length;
+-  const passedCount = companies.length - exitedCount;
++  const exitedCount = rows.filter((r) => r.company.exit_date).length;
++  const passedCount = rows.length - exitedCount;
+ 
+   return (
+     <div>
+@@ -21,35 +24,61 @@ export default function ArchiveSection({ companies }: { companies: Company[] })
+         <span>{open ? "−" : "+"}</span>
+       </button>
+       {open && (
+-        <div className="mt-2 space-y-2">
+-          {companies.map((c) => (
+-            <div key={c.id} className="rounded border border-line bg-panel p-3">
+-              <div className="flex items-start justify-between">
+-                <div>
+-                  <span className="font-medium text-[#e7e8ea]">{c.name}</span>{" "}
+-                  <span className="font-mono text-xs text-muted">{c.ticker}</span>
+-                  <span className="ml-2 text-xs text-muted">
+-                    {c.exit_date
+-                      ? `exited ${c.exit_date}`
+-                      : `passed ${c.last_reviewed_at ?? "unknown date"}`}
+-                  </span>
+-                </div>
+-                <form action={restoreToPipeline.bind(null, c.id)}>
+-                  <button
+-                    type="submit"
+-                    className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
+-                  >
+-                    Move to pipeline
+-                  </button>
+-                </form>
+-              </div>
+-              <p className="mt-1 text-xs text-muted">
+-                {c.exit_date
+-                  ? `${c.exit_price ? `Exit price $${c.exit_price}. ` : ""}`
+-                  : c.rejection_reason}
+-              </p>
+-            </div>
+-          ))}
++        <div className="mt-2 overflow-hidden rounded border border-line">
++          <table className="w-full text-sm">
++            <thead>
++              <tr className="border-b border-line bg-panel text-left text-xs uppercase tracking-wide text-muted">
++                <th className="px-4 py-3">Company</th>
++                <th className="px-4 py-3">Composite</th>
++                <th className="px-4 py-3">Confidence</th>
++                <th className="px-4 py-3">Archived</th>
++                <th className="px-4 py-3"></th>
++              </tr>
++            </thead>
++            <tbody>
++              {rows.map(({ company: c, score: s }) => (
++                <>
++                  <tr key={c.id} className="border-b border-line bg-panel/40 hover:bg-panelhi">
++                    <td className="px-4 py-3">
++                      <Link href={`/companies/${c.id}`} className="font-medium text-[#e7e8ea]">
++                        {c.name}
++                      </Link>{" "}
++                      <span className="font-mono text-xs text-muted">{c.ticker}</span>
++                    </td>
++                    <td className="px-4 py-3">
++                      <span className="font-mono text-sm text-[#e7e8ea]">{s?.composite_score ?? "—"}</span>
++                    </td>
++                    <td className="px-4 py-3">
++                      <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "—"}/5</span>
++                    </td>
++                    <td className="px-4 py-3 text-xs text-muted">
++                      {c.exit_date
++                        ? `exited ${c.exit_date}${c.exit_price ? ` at $${c.exit_price}` : ""}`
++                        : `passed ${c.last_reviewed_at ?? "unknown date"}`}
++                    </td>
++                    <td className="px-4 py-3 text-right">
++                      <form action={restoreToPipeline.bind(null, c.id)}>
++                        <button
++                          type="submit"
++                          className="rounded border border-line px-3 py-1 text-xs hover:border-signal"
++                        >
++                          Move to pipeline
++                        </button>
++                      </form>
++                    </td>
++                  </tr>
++                  {c.archive_reason && (
++                    <tr key={`${c.id}-reason`} className="border-b border-line bg-panelhi last:border-0">
++                      <td colSpan={5} className="px-4 py-2 text-xs text-[#cfd1d5]">
++                        <span className="font-medium text-muted">Why archived: </span>
++                        {c.archive_reason}
++                      </td>
++                    </tr>
++                  )}
++                </>
++              ))}
++            </tbody>
++          </table>
+         </div>
+       )}
+     </div>
+diff --git a/app/PipelineTable.tsx b/app/PipelineTable.tsx
+index b15a955..9319680 100644
+--- a/app/PipelineTable.tsx
++++ b/app/PipelineTable.tsx
+@@ -3,7 +3,8 @@
+ import { useState } from "react";
+ import Link from "next/link";
+ import { Company, Score } from "@/lib/supabase";
+-import { movePipelineRank, archiveCompany } from "@/lib/actions";
++import { movePipelineRank } from "@/lib/actions";
++import ArchiveControl from "./ArchiveControl";
+ 
+ type Row = {
+   company: Company;
+@@ -102,11 +103,6 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
+                   >
+                     {c.ticker}
+                   </span>
+-                  {c.rejection_reason && (
+-                    <span className="ml-2 text-xs text-muted" title={`Previously rejected: ${c.rejection_reason}`}>
+-                      (previously passed)
+-                    </span>
+-                  )}
+                   {signal && signal.newlyResolved > 0 && (
+                     <span
+                       className="badge ml-1.5 bg-rise/15 text-rise"
+@@ -138,7 +134,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
+                 <td className="px-4 py-3">
+                   <span className="font-mono text-sm text-[#e7e8ea]">{s?.confidence_score ?? "—"}/5</span>
+                 </td>
+-                <td className="px-4 py-3 text-right">
++                <td className="px-4 py-3 relative">
+                   <div className="flex justify-end gap-2">
+                     <Link
+                       href={`/companies/${c.id}/promote`}
+@@ -146,14 +142,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
+                     >
+                       Promote to invested
+                     </Link>
+-                    <form action={archiveCompany.bind(null, c.id)}>
+-                      <button
+-                        type="submit"
+-                        className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-fall hover:text-fall"
+-                      >
+-                        Archive
+-                      </button>
+-                    </form>
++                    <ArchiveControl companyId={c.id} />
+                   </div>
+                 </td>
+               </tr>
+diff --git a/app/companies/CompanyFormFields.tsx b/app/companies/CompanyFormFields.tsx
+index 8d43e8d..99aaf87 100644
+--- a/app/companies/CompanyFormFields.tsx
++++ b/app/companies/CompanyFormFields.tsx
+@@ -111,6 +111,19 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
+         </p>
+       </Field>
+ 
++      <Field
++        label="Archive reason"
++        hint="Only used if research status above is archived. Required when archiving a company directly from this form, whether that's a brand-new company you're choosing not to pursue, or an existing one."
++      >
++        <textarea
++          name="archive_reason"
++          defaultValue={company?.research_status === "archived" ? company?.archive_reason ?? "" : ""}
++          rows={3}
++          className="input"
++          placeholder="Why this company isn't going into the pipeline"
++        />
++      </Field>
++
+       <Field label="Sector tags">
+         <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 rounded border border-line bg-panelhi p-3">
+           {SECTOR_TAGS.map((tag) => (
+diff --git a/app/page.tsx b/app/page.tsx
+index c82b6f4..9a12c33 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -144,7 +144,9 @@ export default async function HomePage() {
+         )}
+       </div>
+ 
+-      <ArchiveSection companies={archive} />
++      <ArchiveSection
++        rows={archive.map((c) => ({ company: c, score: latestScore(scoresByCompany[c.id]) }))}
++      />
+     </div>
+   );
+ }
+diff --git a/lib/actions.ts b/lib/actions.ts
+index 4218e44..f898929 100644
+--- a/lib/actions.ts
++++ b/lib/actions.ts
+@@ -12,6 +12,11 @@ function parseTags(formData: FormData): string[] {
+ 
+ export async function createCompany(formData: FormData) {
+   const status = String(formData.get("research_status") || "pipeline");
++  const archiveReason = String(formData.get("archive_reason") || "").trim();
++  if (status === "archived" && !archiveReason) {
++    throw new Error("An archive reason is required when adding a company directly as archived.");
++  }
++
+   let pipelineOrder: number | null = null;
+   if (status === "pipeline") {
+     const { data: maxRow } = await supabase
+@@ -42,6 +47,7 @@ export async function createCompany(formData: FormData) {
+       : null,
+     research_status: status,
+     pipeline_order: pipelineOrder,
++    archive_reason: status === "archived" ? archiveReason : null,
+     description: String(formData.get("description") || "") || null,
+   };
+ 
+@@ -207,13 +213,16 @@ export async function movePipelineRank(companyId: string, direction: "up" | "dow
+   revalidatePath("/");
+ }
+ 
+-export async function archiveCompany(companyId: string, _formData: FormData) {
++export async function archiveCompany(companyId: string, formData: FormData) {
++  const reason = String(formData.get("archive_reason") || "").trim();
++  if (!reason) throw new Error("An archive reason is required.");
+   const today = new Date().toISOString().slice(0, 10);
+   const { error } = await supabase
+     .from("companies")
+     .update({
+       research_status: "archived",
+       pipeline_order: null,
++      archive_reason: reason,
+       last_reviewed_at: today,
+       updated_at: new Date().toISOString(),
+     })
+@@ -238,6 +247,7 @@ export async function restoreToPipeline(companyId: string, _formData: FormData)
+     .update({
+       research_status: "pipeline",
+       pipeline_order: nextOrder,
++      archive_reason: null,
+       last_reviewed_at: today,
+       updated_at: new Date().toISOString(),
+     })
+@@ -286,14 +296,17 @@ export async function deleteCompany(companyId: string, _formData: FormData) {
+ 
+ export async function updateCompany(id: string, formData: FormData) {
+   const newStatus = String(formData.get("research_status") || "pipeline");
++  const archiveReasonInput = String(formData.get("archive_reason") || "").trim();
+ 
+   const { data: current } = await supabase
+     .from("companies")
+-    .select("research_status, pipeline_order")
++    .select("research_status, pipeline_order, archive_reason")
+     .eq("id", id)
+     .single();
+ 
+   let pipelineOrder: number | null = current?.pipeline_order ?? null;
++  let archiveReason: string | null = current?.archive_reason ?? null;
++
+   if (newStatus === "pipeline" && current?.research_status !== "pipeline") {
+     const { data: maxRow } = await supabase
+       .from("companies")
+@@ -303,6 +316,13 @@ export async function updateCompany(id: string, formData: FormData) {
+       .limit(1)
+       .single();
+     pipelineOrder = (maxRow?.pipeline_order ?? 0) + 1;
++    archiveReason = null;
++  } else if (newStatus === "archived") {
++    pipelineOrder = null;
++    if (!archiveReasonInput && current?.research_status !== "archived") {
++      throw new Error("An archive reason is required when archiving a company.");
++    }
++    archiveReason = archiveReasonInput || archiveReason;
+   } else if (newStatus !== "pipeline") {
+     pipelineOrder = null;
+   }
+@@ -324,6 +344,7 @@ export async function updateCompany(id: string, formData: FormData) {
+       : null,
+     research_status: newStatus,
+     pipeline_order: pipelineOrder,
++    archive_reason: archiveReason,
+     description: String(formData.get("description") || "") || null,
+     updated_at: new Date().toISOString(),
+   };
+diff --git a/lib/supabase.ts b/lib/supabase.ts
+index ac50665..0763f39 100644
+--- a/lib/supabase.ts
++++ b/lib/supabase.ts
+@@ -54,7 +54,7 @@ export type Company = {
+   target_weight_override_pct: number | null;
+   override_rationale: string | null;
+   needs_review: boolean;
+-  rejection_reason: string | null;
++  archive_reason: string | null;
+   created_at: string;
+   updated_at: string;
+ };
+-- 
+2.43.0
+
