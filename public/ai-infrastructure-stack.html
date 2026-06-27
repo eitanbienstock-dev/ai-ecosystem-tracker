@@ -812,7 +812,7 @@
   companyDropdown.addEventListener('click',e=>e.stopPropagation());
   document.addEventListener('click',()=>closeCD());
   clearCompanyBtn.addEventListener('click',()=>stopCompanyTrace());
-  async function loadCompanies(){try{const res=await fetch('/api/stack-companies');const data=await res.json();allCompanies=data.companies||[];buildCompanyDropdown();}catch(err){companySelectVal.textContent='Unavailable';}}
+  function loadCompanies(){try{const el=window.parent&&window.parent.document.getElementById('stack-company-data');if(el&&el.textContent){allCompanies=JSON.parse(el.textContent);buildCompanyDropdown();return;}}catch(e){}companySelectVal.textContent='No data';}
   loadCompanies();
 
 })();
