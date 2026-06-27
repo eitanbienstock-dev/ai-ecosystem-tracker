@@ -27,10 +27,15 @@ const MATERIALITY_HINTS: Record<string, string> = {
   peripheral: "AI is one input among many, not central to the investment case",
 };
 
-const RESEARCH_STATUSES = ["pipeline", "archived"];
+const RESEARCH_STATUSES: { value: string; label: string }[] = [
+  { value: "watched", label: "Watched" },
+  { value: "holding", label: "Holding" },
+  { value: "exited", label: "Exited" },
+  { value: "archived", label: "Archived" },
+];
 
 export default function CompanyFormFields({ company }: { company?: Company }) {
-  const [status, setStatus] = useState(company?.research_status ?? "pipeline");
+  const [status, setStatus] = useState(company?.research_status ?? "watched");
 
   return (
     <div className="space-y-5">
@@ -92,31 +97,21 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
       </div>
 
       <Field label="Research status">
-        {company?.research_status === "invested" ? (
-          <>
-            <input type="hidden" name="research_status" value="invested" />
-            <div className="input flex items-center text-muted">
-              invested, real capital deployed
-            </div>
-          </>
-        ) : (
-          <select
-            name="research_status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="input"
-          >
-            {RESEARCH_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        )}
+        <select
+          name="research_status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="input"
+        >
+          {RESEARCH_STATUSES.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
         <p className="mt-1 text-xs text-muted">
-          {company?.research_status === "invested"
-            ? "Use Trim or Exit on the portfolio card to change an invested position, not this form."
-            : `${RESEARCH_STATUSES.map((s) => `${s}: ${STATUS_DEFINITIONS[s]}`).join(" · ")} Promoting to invested happens through the dedicated promote flow, not this form, so it captures entry price and share count.`}
+          Add to portfolio through the dedicated promote flow, not this form — it captures entry price,
+          shares, and portfolio assignment.
         </p>
       </Field>
 

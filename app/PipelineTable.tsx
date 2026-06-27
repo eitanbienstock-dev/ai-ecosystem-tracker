@@ -22,16 +22,15 @@ const PIPELINE_STATUSES = new Set(["pipeline", "watched", "invested", "holding",
 function statusBadge(status: string) {
   switch (status) {
     case "pipeline":
-      return <span className="badge bg-line/60 text-muted">pipeline</span>;
     case "watched":
-      return <span className="badge bg-[#3a3a3a] text-muted">watched</span>;
+      return <span className="badge bg-[#3a3a3a] text-muted">Watched</span>;
     case "holding":
     case "invested":
-      return <span className="badge bg-rise/15 text-rise">holding</span>;
+      return <span className="badge bg-rise/15 text-rise">Holding</span>;
     case "exited":
-      return <span className="badge bg-blue-500/15 text-blue-400">exited</span>;
+      return <span className="badge bg-blue-500/15 text-blue-400">Exited</span>;
     case "archived":
-      return <span className="badge bg-muted/10 text-muted">archived</span>;
+      return <span className="badge bg-muted/10 text-muted">Archived</span>;
     default:
       return <span className="badge bg-muted/10 text-muted">{status}</span>;
   }
@@ -46,7 +45,7 @@ const FILTER_LABELS: { key: Filter; label: string }[] = [
 ];
 
 function matchesFilter(status: string, filter: Filter): boolean {
-  if (filter === "all") return status !== "archived";
+  if (filter === "all") return true;
   if (filter === "holding") return status === "holding" || status === "invested";
   return status === filter;
 }
@@ -58,7 +57,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
   const [pending, setPending] = useState<string | null>(null);
 
   const counts: Record<Filter, number> = {
-    all: rows.filter((r) => r.company.research_status !== "archived").length,
+    all: rows.length,
     watched: rows.filter((r) => r.company.research_status === "watched").length,
     holding: rows.filter(
       (r) => r.company.research_status === "holding" || r.company.research_status === "invested"
@@ -247,7 +246,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                             href={`/companies/${c.id}/promote`}
                             className="rounded border border-line px-3 py-1 text-xs hover:border-signal whitespace-nowrap"
                           >
-                            Promote to invested
+                            Add to portfolio
                           </Link>
                           <ArchiveControl companyId={c.id} />
                         </>

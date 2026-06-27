@@ -1,7 +1,11 @@
 export const STATUS_DEFINITIONS: Record<string, string> = {
-  invested: "Real capital deployed.",
-  pipeline: "Being tracked and researched, not yet funded. Manually ranked, move candidates up or down to reflect priority.",
+  watched: "Being tracked and researched, not yet funded. Manually ranked, move candidates up or down to reflect priority.",
+  holding: "Real capital deployed. Position entered through the promote flow.",
+  exited: "Previously held, all shares sold.",
   archived: "No longer active, either evaluated and passed on, or previously invested and since exited.",
+  // Legacy values kept as fallbacks
+  pipeline: "Being tracked and researched, not yet funded.",
+  invested: "Real capital deployed.",
 };
 
 // Leverage asks a durability question: once things settle, is this hard to
