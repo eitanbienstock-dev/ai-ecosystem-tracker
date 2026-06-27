@@ -13,13 +13,18 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { name, description } = body;
+  const { name, description, portfolio_type, capital_amount } = body;
 
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('portfolios')
-    .insert({ name, description })
+    .insert({
+      name,
+      description,
+      portfolio_type: portfolio_type ?? 'manual',
+      capital_amount: capital_amount ?? null,
+    })
     .select()
     .single();
 

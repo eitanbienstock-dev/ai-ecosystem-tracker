@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-type Portfolio = {
-  id: string;
-  name: string;
-  description: string | null;
-};
+import NewPortfolioModal, { Portfolio } from "./NewPortfolioModal";
 
 type Props = {
   onSelect: (id: string | null) => void;
@@ -18,9 +13,6 @@ export default function PortfolioSelector({ onSelect, onPortfoliosChange }: Prop
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch("/api/portfolios")
@@ -45,30 +37,13 @@ export default function PortfolioSelector({ onSelect, onPortfoliosChange }: Prop
     onSelect(id);
   }
 
-  async function createPortfolio() {
-    if (!name.trim() || submitting) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/portfolios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-        }),
-      });
-      const { portfolio } = await res.json();
-      const updated = [...portfolios, portfolio];
-      setPortfolios(updated);
-      onPortfoliosChange(updated);
-      setSelectedId(portfolio.id);
-      onSelect(portfolio.id);
-      setModalOpen(false);
-      setName("");
-      setDescription("");
-    } finally {
-      setSubmitting(false);
-    }
+  function handleCreated(portfolio: Portfolio) {
+    const updated = [...portfolios, portfolio];
+    setPortfolios(updated);
+    onPortfoliosChange(updated);
+    setSelectedId(portfolio.id);
+    onSelect(portfolio.id);
+    setModalOpen(false);
   }
 
   if (loading) {
@@ -89,6 +64,9 @@ export default function PortfolioSelector({ onSelect, onPortfoliosChange }: Prop
             }`}
           >
             {p.name}
+            {p.portfolio_type === "model" && (
+              <span className="ml-1.5 font-mono text-[10px] opacity-60">model</span>
+            )}
           </button>
         ))}
         <button
@@ -100,53 +78,7 @@ export default function PortfolioSelector({ onSelect, onPortfoliosChange }: Prop
       </div>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="w-full max-w-sm rounded border border-line bg-panel p-6">
-            <h2 className="mb-4 font-display text-lg font-semibold text-[#e7e8ea]">New portfolio</h2>
-            <label className="mb-3 block">
-              <span className="mb-1 block text-xs text-muted">Name</span>
-              <input
-                autoFocus
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && createPortfolio()}
-                className="input w-full"
-                placeholder="e.g. AI Infrastructure"
-              />
-            </label>
-            <label className="mb-4 block">
-              <span className="mb-1 block text-xs text-muted">Description (optional)</span>
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && createPortfolio()}
-                className="input w-full"
-                placeholder="Short description"
-              />
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={createPortfolio}
-                disabled={!name.trim() || submitting}
-                className="rounded border border-signal bg-signal/20 px-4 py-1.5 text-sm text-signal hover:bg-signal/30 disabled:opacity-40"
-              >
-                {submitting ? "Creating…" : "Create"}
-              </button>
-              <button
-                onClick={() => {
-                  setModalOpen(false);
-                  setName("");
-                  setDescription("");
-                }}
-                className="rounded border border-line px-4 py-1.5 text-sm text-muted hover:border-signal"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <NewPortfolioModal onCreated={handleCreated} onClose={() => setModalOpen(false)} />
       )}
     </>
   );

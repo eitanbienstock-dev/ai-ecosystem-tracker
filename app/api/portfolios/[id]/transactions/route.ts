@@ -20,7 +20,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const body = await request.json();
-  const { company_id, transaction_type, shares, price_per_share, note, transacted_at } = body;
+  const { company_id, transaction_type, shares, price_per_share, note, transacted_at, allocation_override_pct } = body;
 
   if (!company_id || !transaction_type || !shares || !price_per_share) {
     return NextResponse.json(
@@ -39,6 +39,7 @@ export async function POST(
       price_per_share,
       note,
       transacted_at,
+      allocation_override_pct: allocation_override_pct ?? null,
     })
     .select()
     .single();
