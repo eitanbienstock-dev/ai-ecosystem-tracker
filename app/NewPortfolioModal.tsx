@@ -504,11 +504,24 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                         </tr>
                       </thead>
                       <tbody>
-                        {previewRows.map((row) => (
+                        {previewRows.map((row) => {
+                          const meta = availableCompanies.find((c) => c.company_id === row.company_id);
+                          return (
                           <tr key={row.company_id} className={`border-b border-line/50 last:border-0 ${syncingPrices ? "opacity-50" : ""}`}>
                             <td className="px-3 py-2">
-                              <span className="font-medium text-[#e7e8ea]">{row.name}</span>{" "}
-                              <span className="font-mono text-muted">{row.ticker}</span>
+                              <span className="font-medium text-[#e7e8ea]">{row.name}</span>
+                              <br />
+                              <span className="font-mono text-[10px] text-muted">
+                                {row.ticker ?? "—"}
+                                {meta?.composite_score != null && (
+                                  <>
+                                    {" · "}
+                                    <span className="text-[#cfd1d5]">{meta.composite_score}</span>
+                                    {"  "}
+                                    <span>{meta.confidence_score ?? "—"}/5</span>
+                                  </>
+                                )}
+                              </span>
                             </td>
                             <td className="px-3 py-2 text-right font-mono text-[#e7e8ea]">
                               {(row.allocation_pct * 100).toFixed(1)}%
@@ -531,7 +544,8 @@ export default function NewPortfolioModal({ onCreated, onClose }: Props) {
                               )}
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
