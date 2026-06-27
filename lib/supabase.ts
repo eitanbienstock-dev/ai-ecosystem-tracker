@@ -37,7 +37,7 @@ export type Company = {
   institutional_ownership_trend: string | null;
   capital_allocation_assessment: string | null;
   ai_claims_credibility: string | null;
-  compensation_tied_to_ai: boolean | null;
+  insider_transaction_signal: string | null;
   moat_description: string | null;
   customer_concentration_risk: string | null;
   ecosystem_leverage_direction: string | null;
