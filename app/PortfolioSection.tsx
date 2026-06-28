@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import PortfolioSelector from "./PortfolioSelector";
+import ManualPositionsModal from "./ManualPositionsModal";
 import { Portfolio } from "./NewPortfolioModal";
 
 type Transaction = {
@@ -186,6 +187,7 @@ export default function PortfolioSection() {
   const [loadingPrices, setLoadingPrices] = useState(false);
   const [txModal, setTxModal] = useState<TxModalState | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [manualPositionsPortfolio, setManualPositionsPortfolio] = useState<Portfolio | null>(null);
 
   // Model portfolio: formula allocations (company_id → allocation_pct)
   const [formulaAllocations, setFormulaAllocations] = useState<Map<string, number>>(new Map());
@@ -266,14 +268,40 @@ export default function PortfolioSection() {
         />
       )}
 
+      {manualPositionsPortfolio && (
+        <ManualPositionsModal
+          portfolio={manualPositionsPortfolio}
+          onClose={() => setManualPositionsPortfolio(null)}
+          onDone={() => {
+            setSelectedId(manualPositionsPortfolio.id);
+            setManualPositionsPortfolio(null);
+            setRefreshTrigger((t) => t + 1);
+          }}
+        />
+      )}
+
       <div className="mb-3 flex items-baseline justify-between">
         <h1 className="font-display text-2xl font-bold text-[#e7e8ea]">Investment Portfolio</h1>
-        {hasPortfolios && selectedId && !loadingPositions && (
-          <span className="font-mono text-sm text-muted">{positions.length} positions</span>
-        )}
+        <div className="flex items-center gap-3">
+          {hasPortfolios && selectedId && !loadingPositions && (
+            <span className="font-mono text-sm text-muted">{positions.length} positions</span>
+          )}
+          {selectedPortfolio && !isModel && (
+            <button
+              onClick={() => setManualPositionsPortfolio(selectedPortfolio)}
+              className="rounded border border-line px-3 py-1 text-xs text-muted hover:border-signal hover:text-signal"
+            >
+              + Add positions
+            </button>
+          )}
+        </div>
       </div>
 
-      <PortfolioSelector onSelect={setSelectedId} onPortfoliosChange={handlePortfoliosChange} />
+      <PortfolioSelector
+        onSelect={setSelectedId}
+        onPortfoliosChange={handlePortfoliosChange}
+        onManualCreated={(p) => setManualPositionsPortfolio(p)}
+      />
 
       {hasPortfolios === false && (
         <div className="rounded border border-dashed border-line py-10 text-center">

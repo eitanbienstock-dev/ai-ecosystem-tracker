@@ -237,16 +237,18 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                   </td>
                   <td className="relative px-4 py-3">
                     <div className="flex justify-end gap-2">
+                      {/* A company can be in multiple portfolios at once, so it can
+                          always be added to a portfolio unless it has been archived. */}
+                      {c.research_status !== "archived" && (
+                        <Link
+                          href={`/companies/${c.id}/promote`}
+                          className="rounded border border-line px-3 py-1 text-xs hover:border-signal whitespace-nowrap"
+                        >
+                          Add to portfolio
+                        </Link>
+                      )}
                       {(c.research_status === "pipeline" || c.research_status === "watched") && (
-                        <>
-                          <Link
-                            href={`/companies/${c.id}/promote`}
-                            className="rounded border border-line px-3 py-1 text-xs hover:border-signal whitespace-nowrap"
-                          >
-                            Add to portfolio
-                          </Link>
-                          <ArchiveControl companyId={c.id} />
-                        </>
+                        <ArchiveControl companyId={c.id} />
                       )}
                       {(c.research_status === "exited" || c.research_status === "archived") && (
                         <form action={restoreToPipeline.bind(null, c.id)}>

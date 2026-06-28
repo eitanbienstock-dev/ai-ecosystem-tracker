@@ -41,18 +41,13 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const { count, error: countError } = await supabase
+  // Delete child transactions before the parent portfolio row.
+  const { error: txError } = await supabase
     .from('portfolio_transactions')
-    .select('id', { count: 'exact', head: true })
+    .delete()
     .eq('portfolio_id', params.id);
 
-  if (countError) return NextResponse.json({ error: countError.message }, { status: 500 });
-  if (count && count > 0) {
-    return NextResponse.json(
-      { error: 'Cannot delete a portfolio that has transactions' },
-      { status: 409 }
-    );
-  }
+  if (txError) return NextResponse.json({ error: txError.message }, { status: 500 });
 
   const { error } = await supabase
     .from('portfolios')
