@@ -201,6 +201,23 @@ export default function MethodologyPage() {
       </section>
 
       <section className="mb-8">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Pipeline table</h2>
+        <p className="text-sm leading-relaxed text-[#cfd1d5]">
+          The pipeline table on the{" "}
+          <Link href="/" className="text-signal hover:underline">
+            homepage
+          </Link>{" "}
+          lists every company with its status, composite score, and confidence score, alongside a live
+          current price and today&apos;s percentage change pulled from Finnhub for each row, fetched when
+          the page loads and shown as a dash for any ticker whose quote is unavailable. By default the rows
+          are sorted by confidence descending, then composite descending, so the most reliably-scored names
+          surface first; clicking the composite or confidence column header switches the sort to that
+          column. Status filter chips above the table narrow it to Watched, Holding, Exited, or Archived, or
+          show every company at once.
+        </p>
+      </section>
+
+      <section className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Portfolio architecture
         </h2>
@@ -239,8 +256,9 @@ export default function MethodologyPage() {
           All position changes — buys, sells, trims — are recorded as individual transactions in a
           portfolio_transactions table rather than stored as flat current values on the company record.
           From that ledger, the system computes at read time: shares held (net of all buys and sells for
-          that company in that portfolio), weighted average cost basis across all buys, and total cost
-          basis. A company&apos;s research_status is derived from net shares across all portfolios combined:
+          that company in that portfolio), weighted average cost basis across all buys, total cost basis,
+          and unrealized profit and loss against the live price, in both dollar and percentage terms. A
+          company&apos;s research_status is derived from net shares across all portfolios combined:
           any net-positive position anywhere means Holding; fully sold across all portfolios means Exited.
         </p>
       </section>
@@ -395,11 +413,13 @@ export default function MethodologyPage() {
             Coverage map
           </Link>{" "}
           separates two different questions. Capital concentration is about real money: what share of
-          currently invested value sits in each AI category, and what share sits in a holding with a
-          disclosed relationship to a given named partner, weighted by each holding&apos;s current position
-          value, not a simple count of companies. A holding with several partners contributes its full
-          value to each one, since the position is genuinely exposed through every one of those
-          relationships at once, not divided across them. Research coverage, shown separately further down
+          invested capital sits in each AI category, and what share sits in a holding with a disclosed
+          relationship to a given named partner, weighted by each holding&apos;s cost basis, not a simple
+          count of companies. Cost basis is computed from the transaction ledger, buys minus sells across
+          all portfolios, rather than from flat columns on the company record. A holding with several
+          partners contributes its full cost basis to each one, since the position is genuinely exposed
+          through every one of those relationships at once, not divided across them. Research coverage,
+          shown separately further down
           the same page, answers a different question: which parts of the taxonomy have been researched at
           all, independent of whether anything found there was ever funded.
         </p>
@@ -413,14 +433,16 @@ export default function MethodologyPage() {
           Each invested holding is compared against both the S&amp;P 500 and the SOXX semiconductor index
           over the same window, from that holding&apos;s own entry date to now, not a shared calendar
           period, since capital was deployed on different dates and a single shared window would
-          misrepresent the comparison for holdings entered at different times. Both benchmark prices are
-          captured at the moment of entry, the same discipline already applied to a holding&apos;s own
-          entry price, and compared against its live price today. The sector benchmark exists because this
+          misrepresent the comparison for holdings entered at different times. The entry date is the date of
+          the company&apos;s first buy transaction in the ledger, and the holding&apos;s entry price is the
+          weighted-average cost across its buys, both derived from the transaction ledger rather than a
+          stored snapshot. Each benchmark&apos;s price at that entry is captured on the company record and
+          compared against its live price today. The sector benchmark exists because this
           book is deliberately concentrated in AI infrastructure, semiconductors most of all, and beating
           the S&amp;P 500 during an AI-driven semiconductor boom proves very little about selection skill
           on its own. Beating SOXX specifically, the sector that is actually driving most of the book's
           concentration, is the more honest test. The portfolio-level number weights each holding by its
-          current position value. This is the explicit test of the standing goal: deep ecosystem
+          cost basis. This is the explicit test of the standing goal: deep ecosystem
           intelligence should produce returns exceeding the broad market and the sector it sits in, not
           just positive returns in isolation, and not just a sector tailwind mistaken for skill. Shown on
           the{" "}
