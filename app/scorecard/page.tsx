@@ -43,7 +43,48 @@ export default async function ScorecardPage() {
     })
   );
 
-  const invested = (companies ?? []).filter((c: any) => c.research_status === "holding") as Company[];
+  // Positions are derived from real transactions across ALL portfolios, not the
+  // deprecated companies.entry_price / entry_date / shares_held columns. Per
+  // company: net shares, first-buy date (entry date), weighted-average entry
+  // price, and cost basis (the value-weighting basis for the aggregate).
+  const { data: txRows } = await supabase
+    .from("portfolio_transactions")
+    .select("company_id, transaction_type, shares, price_per_share, transacted_at");
+
+  type Position = {
+    netShares: number;
+    buyShares: number;
+    buyCost: number;
+    firstBuyDate: string | null;
+  };
+  const posByCompany = new Map<string, Position>();
+  for (const tx of (txRows ?? []) as any[]) {
+    const cid = tx.company_id as string;
+    const shares = Number(tx.shares);
+    const pos = posByCompany.get(cid) ?? { netShares: 0, buyShares: 0, buyCost: 0, firstBuyDate: null };
+    if (tx.transaction_type === "buy") {
+      pos.netShares += shares;
+      pos.buyShares += shares;
+      pos.buyCost += shares * Number(tx.price_per_share);
+      if (!pos.firstBuyDate || tx.transacted_at < pos.firstBuyDate) pos.firstBuyDate = tx.transacted_at;
+    } else if (tx.transaction_type === "sell") {
+      pos.netShares -= shares;
+    }
+    posByCompany.set(cid, pos);
+  }
+
+  const entryPriceByCompany = new Map<string, number>();
+  const costBasisByCompany = new Map<string, number>();
+  for (const [cid, pos] of posByCompany) {
+    if (pos.netShares <= 0 || pos.buyShares <= 0) continue;
+    const entryPrice = pos.buyCost / pos.buyShares;
+    entryPriceByCompany.set(cid, entryPrice);
+    costBasisByCompany.set(cid, pos.netShares * entryPrice);
+  }
+
+  const invested = (companies ?? []).filter(
+    (c: any) => (posByCompany.get(c.id)?.netShares ?? 0) > 0
+  ) as Company[];
   const benchmarkTickers = Array.from(new Set(invested.map((c) => c.benchmark_ticker).filter(Boolean) as string[]));
   const liveBenchmarkByTicker = new Map<string, number>();
   await Promise.all(
@@ -64,14 +105,16 @@ export default async function ScorecardPage() {
   );
 
   const benchmarkRows = invested.map((c) => {
+    const entryPrice = entryPriceByCompany.get(c.id) ?? null;
     const livePrice = c.ticker ? liveByTicker.get(c.ticker) ?? null : null;
     const liveBenchmarkPrice = c.benchmark_ticker ? liveBenchmarkByTicker.get(c.benchmark_ticker) ?? null : null;
     const liveSectorBenchmarkPrice = c.sector_benchmark_ticker
       ? liveSectorBenchmarkByTicker.get(c.sector_benchmark_ticker) ?? null
       : null;
     const { holdingReturnPct, benchmarkReturnPct, excessPct, sectorBenchmarkReturnPct, sectorExcessPct } =
-      computeBenchmarkRow(c, livePrice, liveBenchmarkPrice, liveSectorBenchmarkPrice);
-    const value = (c.shares_held ?? 0) * (livePrice ?? c.entry_price ?? 0);
+      computeBenchmarkRow(c, entryPrice, livePrice, liveBenchmarkPrice, liveSectorBenchmarkPrice);
+    // Aggregate weight is cost basis from transactions, not current market value.
+    const value = costBasisByCompany.get(c.id) ?? 0;
     return {
       company: c,
       holdingReturnPct,

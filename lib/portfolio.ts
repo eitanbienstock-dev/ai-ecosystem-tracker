@@ -63,6 +63,7 @@ export function daysHeld(entryDate: string | null): number | null {
 
 export function computeBenchmarkRow(
   c: Company,
+  entryPrice: number | null,
   livePrice: number | null,
   liveBenchmarkPrice: number | null,
   liveSectorBenchmarkPrice: number | null = null
@@ -74,7 +75,7 @@ export function computeBenchmarkRow(
   sectorExcessPct: number | null;
 } {
   const holdingReturnPct =
-    c.entry_price && livePrice ? ((livePrice - c.entry_price) / c.entry_price) * 100 : null;
+    entryPrice && livePrice ? ((livePrice - entryPrice) / entryPrice) * 100 : null;
   const benchmarkReturnPct =
     c.benchmark_price_at_entry && liveBenchmarkPrice
       ? ((liveBenchmarkPrice - c.benchmark_price_at_entry) / c.benchmark_price_at_entry) * 100
