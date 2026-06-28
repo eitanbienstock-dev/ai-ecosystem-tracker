@@ -1,6 +1,5 @@
 import { supabase, Company, Partnership } from "@/lib/supabase";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/taxonomy";
-import { getLivePrice } from "@/lib/marketData";
 
 export const dynamic = "force-dynamic";
 
@@ -24,17 +23,38 @@ export default async function DashboardPage() {
   }
 
   const list = (companies ?? []) as Company[];
-  const invested = list.filter((c) => c.research_status === "holding");
 
-  const valueByCompany = new Map<string, number>();
-  await Promise.all(
-    invested.map(async (c) => {
-      const live = c.ticker ? await getLivePrice(c.ticker) : null;
-      const price = live?.price ?? c.entry_price ?? 0;
-      valueByCompany.set(c.id, (c.shares_held ?? 0) * price);
-    })
-  );
-  const totalInvestedValue = Array.from(valueByCompany.values()).reduce((a, b) => a + b, 0);
+  // Capital concentration is computed from real transactions across ALL
+  // portfolios. The deprecated companies.shares_held / entry_price columns are
+  // no longer written to, so cost basis is derived from portfolio_transactions:
+  // sum(buy shares * price) minus sum(sell shares * price), per company.
+  const { data: txRows } = await supabase
+    .from("portfolio_transactions")
+    .select("company_id, transaction_type, shares, price_per_share, companies(ai_category)");
+
+  type CompanyAgg = { company_id: string; ai_category: string | null; costBasis: number; netShares: number };
+  const aggByCompany = new Map<string, CompanyAgg>();
+  for (const tx of (txRows ?? []) as any[]) {
+    const cid = tx.company_id as string;
+    const shares = Number(tx.shares);
+    const amount = shares * Number(tx.price_per_share);
+    const agg =
+      aggByCompany.get(cid) ??
+      { company_id: cid, ai_category: tx.companies?.ai_category ?? null, costBasis: 0, netShares: 0 };
+    if (tx.transaction_type === "buy") {
+      agg.costBasis += amount;
+      agg.netShares += shares;
+    } else if (tx.transaction_type === "sell") {
+      agg.costBasis -= amount;
+      agg.netShares -= shares;
+    }
+    aggByCompany.set(cid, agg);
+  }
+
+  // Only companies still holding net shares count toward invested capital.
+  const invested = Array.from(aggByCompany.values()).filter((a) => a.netShares > 0);
+  const totalInvestedValue = invested.reduce((sum, a) => sum + a.costBasis, 0);
+  const costBasisById = new Map(invested.map((a) => [a.company_id, a.costBasis]));
 
   const { data: partnerships } = invested.length
     ? await supabase
@@ -42,14 +62,14 @@ export default async function DashboardPage() {
         .select("*")
         .in(
           "company_id",
-          invested.map((c) => c.id)
+          invested.map((a) => a.company_id)
         )
     : { data: [] };
 
   const valueByCategory = new Map<string, number>();
-  for (const c of invested) {
-    const key = c.ai_category ?? "other";
-    valueByCategory.set(key, (valueByCategory.get(key) ?? 0) + (valueByCompany.get(c.id) ?? 0));
+  for (const a of invested) {
+    const key = a.ai_category ?? "other";
+    valueByCategory.set(key, (valueByCategory.get(key) ?? 0) + a.costBasis);
   }
   const categoryConcentration = Array.from(valueByCategory.entries())
     .map(([cat, value]) => ({ cat, value, pct: totalInvestedValue > 0 ? (value / totalInvestedValue) * 100 : 0 }))
@@ -57,7 +77,7 @@ export default async function DashboardPage() {
 
   const valueByPartner = new Map<string, { value: number; companies: Set<string> }>();
   for (const p of (partnerships ?? []) as Partnership[]) {
-    const value = valueByCompany.get(p.company_id) ?? 0;
+    const value = costBasisById.get(p.company_id) ?? 0;
     const entry = valueByPartner.get(p.partner_name) ?? { value: 0, companies: new Set<string>() };
     entry.value += value;
     entry.companies.add(p.company_id);
