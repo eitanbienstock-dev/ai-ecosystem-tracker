@@ -45,7 +45,88 @@ export default function MethodologyPage() {
         claiming to measure.
       </p>
 
-      <section className="mb-8">
+      <nav className="mb-8">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">On this page</p>
+        <ul className="space-y-1 text-sm leading-relaxed text-[#cfd1d5]">
+          <li>
+            <a href="#universe" className="text-signal hover:underline">Universe</a>
+          </li>
+          <li>
+            <a href="#candidate-intake" className="text-signal hover:underline">
+              How candidates enter the pipeline
+            </a>
+            <ul className="mt-1 space-y-1 pl-5">
+              <li>
+                <a href="#sourcing" className="text-signal hover:underline">Sourcing</a>
+              </li>
+              <li>
+                <a href="#sourcing-in-practice" className="text-signal hover:underline">
+                  How sourcing actually happens in practice
+                </a>
+              </li>
+              <li>
+                <a href="#eligibility-screen" className="text-signal hover:underline">
+                  Eligibility screen, enforced at intake
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a href="#workflow-states" className="text-signal hover:underline">Workflow states</a>
+          </li>
+          <li>
+            <a href="#pipeline-table" className="text-signal hover:underline">Pipeline table</a>
+          </li>
+          <li>
+            <a href="#portfolio-architecture" className="text-signal hover:underline">Portfolio architecture</a>
+          </li>
+          <li>
+            <a href="#transaction-ledger" className="text-signal hover:underline">Transaction ledger</a>
+          </li>
+          <li>
+            <a href="#composite-score" className="text-signal hover:underline">Composite score (0 to 100)</a>
+          </li>
+          <li>
+            <a href="#leverage-assessment" className="text-signal hover:underline">Leverage assessment</a>
+          </li>
+          <li>
+            <a href="#confidence-score" className="text-signal hover:underline">Confidence score (1 to 5)</a>
+          </li>
+          <li>
+            <a href="#position-sizing" className="text-signal hover:underline">Position sizing</a>
+          </li>
+          <li>
+            <a href="#confidence-floor" className="text-signal hover:underline">Confidence floor</a>
+          </li>
+          <li>
+            <a href="#concentration-flag" className="text-signal hover:underline">
+              Promotion-time concentration flag
+            </a>
+          </li>
+          <li>
+            <a href="#capital-concentration" className="text-signal hover:underline">Capital concentration</a>
+          </li>
+          <li>
+            <a href="#benchmark-comparison" className="text-signal hover:underline">Benchmark comparison</a>
+          </li>
+          <li>
+            <a href="#validation" className="text-signal hover:underline">
+              Validation: does the ranking actually work
+            </a>
+          </li>
+          <li>
+            <a href="#data-sourcing" className="text-signal hover:underline">Data sourcing discipline</a>
+          </li>
+          <li>
+            <a href="#research-digest" className="text-signal hover:underline">Research digest</a>
+          </li>
+          <li>
+            <a href="#what-this-is-not" className="text-signal hover:underline">What this is not</a>
+          </li>
+        </ul>
+      </nav>
+
+      <section id="universe" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Universe</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
           Companies listed on a major US exchange, Nasdaq or NYSE, with market caps up to roughly 100
@@ -78,7 +159,7 @@ export default function MethodologyPage() {
         </div>
       </section>
 
-      <section className="mb-8">
+      <section id="candidate-intake" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           How candidates enter the pipeline
         </h2>
@@ -94,7 +175,7 @@ export default function MethodologyPage() {
           opportunities found. Several names can land in the same category if that is honestly where the
           best ideas are.
         </p>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Sourcing</p>
+        <p id="sourcing" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Sourcing</p>
         <ul className="mb-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-[#cfd1d5]">
           <li>
             A coverage gap. The{" "}
@@ -117,7 +198,7 @@ export default function MethodologyPage() {
           </li>
           <li>Direct observation: news, filings, or market activity surfacing a name worth a look.</li>
         </ul>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+        <p id="sourcing-in-practice" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
           How sourcing actually happens in practice
         </p>
         <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
@@ -131,7 +212,7 @@ export default function MethodologyPage() {
           get added, and every one that is still has to clear the same intake requirements individually, no
           exception for arriving as part of a batch.
         </p>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+        <p id="eligibility-screen" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
           Eligibility screen, enforced at intake
         </p>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
@@ -144,7 +225,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="workflow-states" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Workflow states</h2>
         <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
           Every company carries exactly one of four research statuses, all visible in the pipeline table on
@@ -200,7 +281,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="pipeline-table" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Pipeline table</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
           The pipeline table on the{" "}
@@ -217,7 +298,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="portfolio-architecture" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Portfolio architecture
         </h2>
@@ -248,7 +329,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="transaction-ledger" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Transaction ledger
         </h2>
@@ -263,7 +344,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="composite-score" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Composite score (0 to 100)
         </h2>
@@ -293,7 +374,7 @@ export default function MethodologyPage() {
         </div>
       </section>
 
-      <section className="mb-8">
+      <section id="leverage-assessment" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Leverage assessment
         </h2>
@@ -346,7 +427,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="confidence-score" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Confidence score (1 to 5)
         </h2>
@@ -361,7 +442,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="position-sizing" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Position sizing
         </h2>
@@ -378,7 +459,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="confidence-floor" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Confidence floor</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
           Before a candidate is promoted from the Watched Pipeline into the Investment Portfolio, its
@@ -388,7 +469,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="concentration-flag" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Promotion-time concentration flag
         </h2>
@@ -403,7 +484,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="capital-concentration" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Capital concentration
         </h2>
@@ -425,7 +506,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="benchmark-comparison" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Benchmark comparison
         </h2>
@@ -453,7 +534,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="validation" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Validation: does the ranking actually work
         </h2>
@@ -472,7 +553,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="data-sourcing" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
           Data sourcing discipline
         </h2>
@@ -495,7 +576,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section className="mb-8">
+      <section id="research-digest" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Research digest</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
           Periodic scans of institutional research, currently Goldman Sachs and Morgan Stanley, logged with
@@ -511,7 +592,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="what-this-is-not">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">What this is not</h2>
         <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-[#cfd1d5]">
           <li>Not a diversified portfolio. Concentrated by design, all in AI-adjacent equities.</li>

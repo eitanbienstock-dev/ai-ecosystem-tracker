@@ -25,8 +25,12 @@ Next.js 14 (App Router) + Supabase + Tailwind + Vercel
 - When a data error is fixed on one company, check all active companies for the same issue before considering it done.
 - When a new feature depends on a database field, verify real data populates that field for existing records. A passing build is not sufficient.
 
-## Methodology page
-/methodology documents scoring weights, thresholds, formulas, workflow states, and validation rules. Whenever any of these change, update /methodology in the same change. Only document what is actually built.
+## METHODOLOGY PAGE -- MANDATORY ON EVERY CHANGE
+This is non-negotiable and applies to every single prompt without exception.
+Before running next build on any prompt, check whether the changes made affect any of the following: scoring weights, portfolio mechanics, pipeline status model, transaction logic, UI workflows, data sources, or any feature visible to the user.
+If yes: update app/methodology/page.tsx to accurately reflect the change before building.
+If no mechanic changed: add a one-line comment in your response confirming you checked and no methodology update was needed.
+Never skip this step. Never defer it to a later prompt. The build should not run until methodology is current.
 
 ## Scoring weights in use
 Weight version c5c7fe8a: ecosystem 25 / financial 20 / ai_moat 15 / management 15 / catalyst 15 / valuation 10
