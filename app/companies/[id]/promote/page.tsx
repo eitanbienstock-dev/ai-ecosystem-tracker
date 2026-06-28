@@ -10,7 +10,7 @@ export default async function PromotePage({ params }: { params: { id: string } }
   if (!company) notFound();
   const c = company as Company;
 
-  if (c.research_status === "invested" || c.research_status === "holding") {
+  if (c.research_status === "holding") {
     return (
       <div className="mx-auto max-w-xl">
         <h1 className="font-display mb-2 text-2xl font-bold text-[#e7e8ea]">
@@ -27,7 +27,7 @@ export default async function PromotePage({ params }: { params: { id: string } }
   const { data: holdingCompanies } = await supabase
     .from("companies")
     .select("id, name, ai_category")
-    .in("research_status", ["invested", "holding"]);
+    .in("research_status", ["holding"]);
   const holding = (holdingCompanies ?? []) as Pick<Company, "id" | "name" | "ai_category">[];
   const holdingIds = holding.map((x) => x.id);
 

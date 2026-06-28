@@ -5,7 +5,7 @@ import { getLivePrice } from "@/lib/marketData";
 export const dynamic = "force-dynamic";
 
 function statusColor(status: string) {
-  if (status === "invested") return "bg-rise/15 text-rise";
+  if (status === "holding") return "bg-rise/15 text-rise";
   return "bg-panelhi text-muted";
 }
 
@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   const { data: companies, error } = await supabase
     .from("companies")
     .select("*")
-    .in("research_status", ["pipeline", "invested"]);
+    .in("research_status", ["watched", "holding", "exited"]);
 
   if (error) {
     return (
@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   }
 
   const list = (companies ?? []) as Company[];
-  const invested = list.filter((c) => c.research_status === "invested");
+  const invested = list.filter((c) => c.research_status === "holding");
 
   const valueByCompany = new Map<string, number>();
   await Promise.all(

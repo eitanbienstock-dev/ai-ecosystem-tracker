@@ -43,7 +43,7 @@ export default async function ScorecardPage() {
     })
   );
 
-  const invested = (companies ?? []).filter((c: any) => c.research_status === "invested") as Company[];
+  const invested = (companies ?? []).filter((c: any) => c.research_status === "holding") as Company[];
   const benchmarkTickers = Array.from(new Set(invested.map((c) => c.benchmark_ticker).filter(Boolean) as string[]));
   const liveBenchmarkByTicker = new Map<string, number>();
   await Promise.all(

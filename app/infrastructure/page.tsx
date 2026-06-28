@@ -60,7 +60,7 @@ export default async function InfrastructurePage() {
   const { data } = await supabase
     .from("companies")
     .select("id,name,ticker,ai_category,sector_tags,research_status,description,moat_description,ecosystem_leverage_direction,ecosystem_trajectory")
-    .in("research_status", ["invested", "pipeline"])
+    .in("research_status", ["holding", "watched"])
     .order("name", { ascending: true });
 
   const companies = (data ?? []).map((c: Company) => ({

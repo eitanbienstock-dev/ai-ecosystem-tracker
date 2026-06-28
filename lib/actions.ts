@@ -15,7 +15,7 @@ function parseTags(formData: FormData): string[] {
 }
 
 export async function createCompany(formData: FormData) {
-  const status = String(formData.get("research_status") || "pipeline");
+  const status = String(formData.get("research_status") || "watched");
   const archiveReason = String(formData.get("archive_reason") || "").trim();
   if (status === "archived" && !archiveReason) {
     throw new Error("An archive reason is required when adding a company directly as archived.");
@@ -32,11 +32,11 @@ export async function createCompany(formData: FormData) {
   }
 
   let pipelineOrder: number | null = null;
-  if (status === "pipeline") {
+  if (status === "watched") {
     const { data: maxRow } = await supabase
       .from("companies")
       .select("pipeline_order")
-      .in("research_status", ["pipeline", "invested"])
+      .in("research_status", ["watched", "holding"])
       .order("pipeline_order", { ascending: false })
       .limit(1)
       .single();
@@ -85,8 +85,8 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
     .select("research_status")
     .eq("id", companyId)
     .single();
-  if (current?.research_status === "invested") {
-    throw new Error("This company is already invested. Use Trim or Exit instead of promoting it again.");
+  if (current?.research_status === "holding") {
+    throw new Error("This company is already a holding. Use Trim or Exit instead of promoting it again.");
   }
 
   const entryPrice = Number(formData.get("entry_price") || 0);
@@ -100,7 +100,7 @@ export async function promoteToInvested(companyId: string, formData: FormData) {
   const { error: updateError } = await supabase
     .from("companies")
     .update({
-      research_status: "invested",
+      research_status: "holding",
       entry_date: today,
       entry_price: entryPrice,
       shares_held: shares,
@@ -217,7 +217,7 @@ export async function movePipelineRank(companyId: string, direction: "up" | "dow
   const { data: rows, error: fetchError } = await supabase
     .from("companies")
     .select("id, pipeline_order")
-    .in("research_status", ["pipeline", "invested"])
+    .in("research_status", ["watched", "holding"])
     .order("pipeline_order", { ascending: true });
   if (fetchError) throw new Error(fetchError.message);
 
@@ -268,7 +268,7 @@ export async function restoreToPipeline(companyId: string, _formData: FormData) 
   const { data: maxRow } = await supabase
     .from("companies")
     .select("pipeline_order")
-    .in("research_status", ["pipeline", "invested"])
+    .in("research_status", ["watched", "holding"])
     .order("pipeline_order", { ascending: false })
     .limit(1)
     .single();
@@ -277,7 +277,7 @@ export async function restoreToPipeline(companyId: string, _formData: FormData) 
   const { error } = await supabase
     .from("companies")
     .update({
-      research_status: "pipeline",
+      research_status: "watched",
       pipeline_order: nextOrder,
       archive_reason: null,
       last_reviewed_at: today,
@@ -327,7 +327,7 @@ export async function deleteCompany(companyId: string, _formData: FormData) {
 }
 
 export async function updateCompany(id: string, formData: FormData) {
-  const newStatus = String(formData.get("research_status") || "pipeline");
+  const newStatus = String(formData.get("research_status") || "watched");
   const archiveReasonInput = String(formData.get("archive_reason") || "").trim();
 
   const ticker = String(formData.get("ticker") || "").trim();
@@ -349,11 +349,11 @@ export async function updateCompany(id: string, formData: FormData) {
   let pipelineOrder: number | null = current?.pipeline_order ?? null;
   let archiveReason: string | null = current?.archive_reason ?? null;
 
-  if (newStatus === "pipeline" && current?.research_status !== "pipeline") {
+  if (newStatus === "watched" && current?.research_status !== "watched") {
     const { data: maxRow } = await supabase
       .from("companies")
       .select("pipeline_order")
-      .in("research_status", ["pipeline", "invested"])
+      .in("research_status", ["watched", "holding"])
       .order("pipeline_order", { ascending: false })
       .limit(1)
       .single();
@@ -366,9 +366,9 @@ export async function updateCompany(id: string, formData: FormData) {
     }
     archiveReason = archiveReasonInput || archiveReason;
   }
-  // newStatus === "invested" falls through here deliberately: pipelineOrder
-  // and archiveReason both keep their current values, since an invested
-  // company stays ranked in the combined pipeline/invested list.
+  // newStatus === "holding" falls through here deliberately: pipelineOrder
+  // and archiveReason both keep their current values, since a holding
+  // company stays ranked in the combined watched/holding list.
 
   const payload = {
     name: String(formData.get("name") || ""),

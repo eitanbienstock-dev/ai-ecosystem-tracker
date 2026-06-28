@@ -17,15 +17,13 @@ type Filter = "all" | "watched" | "holding" | "exited" | "archived";
 const dimLabels = ["ecosystem", "financial", "ai moat", "management", "catalyst", "valuation"];
 const dimWeights = [25, 20, 15, 15, 15, 10];
 
-const PIPELINE_STATUSES = new Set(["pipeline", "watched", "invested", "holding", "exited"]);
+const PIPELINE_STATUSES = new Set(["watched", "holding", "exited"]);
 
 function statusBadge(status: string) {
   switch (status) {
-    case "pipeline":
     case "watched":
       return <span className="badge bg-[#3a3a3a] text-muted">Watched</span>;
     case "holding":
-    case "invested":
       return <span className="badge bg-rise/15 text-rise">Holding</span>;
     case "exited":
       return <span className="badge bg-blue-500/15 text-blue-400">Exited</span>;
@@ -46,7 +44,6 @@ const FILTER_LABELS: { key: Filter; label: string }[] = [
 
 function matchesFilter(status: string, filter: Filter): boolean {
   if (filter === "all") return true;
-  if (filter === "holding") return status === "holding" || status === "invested";
   return status === filter;
 }
 
