@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Company, Score } from "@/lib/supabase";
-import { movePipelineRank, archiveCompany, restoreToPipeline } from "@/lib/actions";
+import { movePipelineRank, restoreToPipeline } from "@/lib/actions";
 import ArchiveControl from "./ArchiveControl";
 
 type Row = {
@@ -55,6 +55,51 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
   const [sortBy, setSortBy] = useState<"default" | "composite" | "confidence">("confidence");
   const [filter, setFilter] = useState<Filter>("all");
   const [pending, setPending] = useState<string | null>(null);
+
+  // Live prices keyed by ticker. `undefined` while still loading, `null` once a
+  // fetch has settled with no usable price (shown as "--" permanently).
+  const [priceMap, setPriceMap] = useState<Map<string, number | null>>(new Map());
+  const [changeMap, setChangeMap] = useState<Map<string, number | null>>(new Map());
+  const [pricesLoaded, setPricesLoaded] = useState(false);
+
+  // Fetch live prices for every pipeline company once on mount. The /api/prices
+  // route fans the tickers out across Finnhub in parallel (Promise.all); page
+  // render is not blocked — the table fills in when this resolves.
+  useEffect(() => {
+    const tickers = Array.from(
+      new Set(rows.map((r) => r.company.ticker).filter(Boolean) as string[])
+    );
+    if (tickers.length === 0) {
+      setPricesLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/prices?tickers=${tickers.join(",")}`)
+      .then((r) => r.json())
+      .then(({ prices, changes }) => {
+        if (cancelled) return;
+        const pm = new Map<string, number | null>();
+        const cm = new Map<string, number | null>();
+        for (const t of tickers) {
+          pm.set(t, prices?.[t] ?? null);
+          cm.set(t, changes?.[t] ?? null);
+        }
+        setPriceMap(pm);
+        setChangeMap(cm);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Network failure — mark every ticker as unavailable so rows show "--".
+        setPriceMap(new Map(tickers.map((t) => [t, null])));
+        setChangeMap(new Map(tickers.map((t) => [t, null])));
+      })
+      .finally(() => {
+        if (!cancelled) setPricesLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rows]);
 
   const counts = Object.fromEntries(
     FILTER_LABELS.map(({ key }) => [
@@ -143,6 +188,8 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">{headerButton("Composite", "composite")}</th>
                 <th className="px-4 py-3">{headerButton("Confidence", "confidence")}</th>
+                <th className="px-4 py-3">Price</th>
+                <th className="px-4 py-3">Day %</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -235,19 +282,42 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
                       {s?.confidence_score ?? "not graded"}/5
                     </span>
                   </td>
+                  {(() => {
+                    const price = c.ticker ? priceMap.get(c.ticker) : null;
+                    const change = c.ticker ? changeMap.get(c.ticker) : null;
+                    const priceText =
+                      !pricesLoaded && c.ticker
+                        ? "--"
+                        : typeof price === "number"
+                        ? `$${price.toFixed(2)}`
+                        : "--";
+                    const showChange = pricesLoaded && typeof change === "number";
+                    return (
+                      <>
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-sm text-[#e7e8ea]">{priceText}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`font-mono text-sm ${
+                              showChange
+                                ? change >= 0
+                                  ? "text-rise"
+                                  : "text-fall"
+                                : "text-muted"
+                            }`}
+                          >
+                            {showChange ? `${change >= 0 ? "+" : ""}${change.toFixed(2)}%` : "--"}
+                          </span>
+                        </td>
+                      </>
+                    );
+                  })()}
                   <td className="relative px-4 py-3">
                     <div className="flex justify-end gap-2">
-                      {/* A company can be in multiple portfolios at once, so it can
-                          always be added to a portfolio unless it has been archived. */}
+                      {/* The pipeline is read-only for transactions. Archive is
+                          available on every row regardless of research_status. */}
                       {c.research_status !== "archived" && (
-                        <Link
-                          href={`/companies/${c.id}/promote`}
-                          className="rounded border border-line px-3 py-1 text-xs hover:border-signal whitespace-nowrap"
-                        >
-                          Add to portfolio
-                        </Link>
-                      )}
-                      {(c.research_status === "pipeline" || c.research_status === "watched") && (
                         <ArchiveControl companyId={c.id} />
                       )}
                       {(c.research_status === "exited" || c.research_status === "archived") && (
@@ -266,7 +336,7 @@ export default function PipelineTable({ rows }: { rows: Row[] }) {
               ))}
               {displayRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted">
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted">
                     No companies with this status.
                   </td>
                 </tr>

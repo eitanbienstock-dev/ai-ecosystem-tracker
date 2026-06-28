@@ -9,9 +9,11 @@ export async function GET(request: NextRequest) {
 
   const results = await Promise.all(tickers.map((t) => getLivePrice(t)));
   const prices: Record<string, number | null> = {};
+  const changes: Record<string, number | null> = {};
   tickers.forEach((t, i) => {
     prices[t] = results[i]?.price ?? null;
+    changes[t] = results[i]?.changePct ?? null;
   });
 
-  return NextResponse.json({ prices });
+  return NextResponse.json({ prices, changes });
 }

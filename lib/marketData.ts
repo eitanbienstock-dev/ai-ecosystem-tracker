@@ -14,6 +14,7 @@ export type LiveMarketCap = {
 
 export type LivePrice = {
   price: number;
+  changePct: number | null; // today's percentage change, null if unavailable
   fetchedAt: string;
 };
 
@@ -32,7 +33,11 @@ export async function getLivePrice(ticker: string): Promise<LivePrice | null> {
     if (!res.ok) return null;
     const data = await res.json();
     if (typeof data.c !== "number" || data.c <= 0) return null;
-    return { price: data.c, fetchedAt: new Date().toISOString() };
+    return {
+      price: data.c,
+      changePct: typeof data.dp === "number" ? data.dp : null,
+      fetchedAt: new Date().toISOString(),
+    };
   } catch {
     return null;
   }
