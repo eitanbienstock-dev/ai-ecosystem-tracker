@@ -136,7 +136,7 @@ export default function MethodologyPage() {
           liquid. Nebius Group, a Dutch entity trading on Nasdaq, is a working example. The portfolio is
           concentrated by design, around ten names, not a diversified basket, and the thesis is that deep
           ecosystem intelligence on AI stack dependencies produces better risk-adjusted returns than
-          passive AI exposure. The 100 billion dollar ceiling is checked at intake. If an existing holding
+          passive AI exposure. The ceiling is thesis-derived rather than arbitrary: the return-predictive signal in ecosystem position is strongest where investor attention is thin and decays in heavily covered mega-caps, where the same information is already priced in, so the cap keeps coverage in the part of the market where the edge actually exists. The 100 billion dollar ceiling is checked at intake. If an existing holding
           grows past it afterward, nothing is automatically actioned, selling a winner on a schedule set by
           its own re-rating rather than by anything about the business changing would be close to
           self-sabotage for a concentrated, conviction-driven book. Instead, a visible flag appears on the
@@ -358,7 +358,11 @@ export default function MethodologyPage() {
         </h2>
         <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
           A weighted blend of six dimensions, each backed by a written note citing the specific source for
-          its key figures. The composite answers one question: is this a good investment on the merits.
+          its key figures. The composite is built to predict risk-adjusted performance, not raw return: a
+          strong, central ecosystem position signals lower drawdown and crash risk as much as upside, so a
+          high-quality company can carry a stretched-valuation drag and still rank well. The question it
+          answers is not simply &quot;will this go up&quot; but &quot;is this a good investment on a
+          risk-adjusted basis, on the merits.&quot;
         </p>
         <div className="overflow-hidden rounded border border-line">
           <table className="w-full text-sm">
@@ -380,6 +384,13 @@ export default function MethodologyPage() {
             </tbody>
           </table>
         </div>
+        <p className="mt-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Ecosystem position and AI moat are scored on a strict boundary, so a single source of advantage
+          is never weighted twice. Ecosystem position is about network position and relationships: where
+          the company sits in the stack and who would bear cost to unwind the relationship. AI moat is
+          about the durability of the company&apos;s own technical or product advantage standing alone.
+          Network effects and switching costs are scored under ecosystem position, not under both.
+        </p>
       </section>
 
       <section id="leverage-assessment" className="mb-8">
@@ -424,6 +435,16 @@ export default function MethodologyPage() {
             </tbody>
           </table>
         </div>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Within the ecosystem dimension, two axes are kept separate rather than collapsed into one.
+          Position quality, how central and diversified the company is across its relationships, is a risk
+          signal: more central, more diversified positions tend toward lower drawdown and lower crash risk.
+          Value capture, the leverage direction above, is a return signal: whether structural power accrues
+          to the company or flows past it to suppliers and customers. The two can point in opposite
+          directions, and more central is not automatically better, since a central, diversified position
+          often trades some raw return for lower risk. Scoring keeps them distinct so a risk attribute is
+          never read as a return attribute.
+        </p>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
           The{" "}
           <Link href="/infrastructure" className="text-signal hover:underline">
@@ -489,6 +510,15 @@ export default function MethodologyPage() {
           infrastructure thesis will naturally cluster around the same handful of hyperscalers and chip
           suppliers. The flag exists so that clustering is visible at the moment of committing capital,
           not to discourage it outright.
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Customer concentration at the company level, a single buyer accounting for a large share of
+          revenue, is treated separately and as a risk input, not a blanket penalty on return. It lowers
+          the risk-adjusted assessment and raises a crash-risk flag, consistent with the evidence that
+          concentrated suppliers carry a higher cost of capital and higher stock-price crash risk. It is
+          deliberately not scored as a flat reduction in return potential, since a concentrated, peripheral
+          name can carry higher raw return alongside that higher crash risk. The disclosed dependence is
+          recorded on the company page from the most recent filing.
         </p>
       </section>
 
@@ -556,12 +586,17 @@ export default function MethodologyPage() {
             Scorecard
           </Link>{" "}
           tracks the Pearson correlation, separately, between composite and confidence on one side and each
-          stock&apos;s return since it was scored on the other, across every graded score on record. A
-          positive number for confidence means scores backed by more verified, primary-source data have
-          tended to outperform scores resting on thinner inputs. This is a deliberately strict methodology:
-          no correlation is shown until there are at least 20 graded scores averaging at least 30 days of
-          tracking, since a correlation computed on too little data is noise dressed up as signal. The
-          system is built to measure whether it works, not to assume it does.
+          stock&apos;s realized performance on the other, across every graded score on record. Because the
+          composite is built to predict risk-adjusted performance, that performance is measured three ways
+          that are never conflated: raw return since scoring, drawdown, and risk-adjusted return, with the
+          risk-adjusted correlation the standard the framework holds itself to. Raw forward return is
+          tracked today; the drawdown and risk-adjusted measures come online as a price-history series is
+          captured for each scored name, since both need the path of the price between scoring and now, not
+          just the two endpoints. A positive number for confidence means scores backed by more verified,
+          primary-source data have tended to outperform scores resting on thinner inputs. This is a
+          deliberately strict methodology: no correlation is shown until there are at least 20 graded scores
+          averaging at least 30 days of tracking, since a correlation computed on too little data is noise
+          dressed up as signal. The system is built to measure whether it works, not to assume it does.
         </p>
       </section>
 

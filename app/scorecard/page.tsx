@@ -106,13 +106,13 @@ export default async function ScorecardPage() {
         {meetsThreshold ? (
           <div className="flex gap-8">
             <div>
-              <p className="text-[10px] text-muted">Confidence ↔ forward return</p>
+              <p className="text-[10px] text-muted">Confidence ↔ raw forward return</p>
               <p className="font-mono text-2xl font-bold text-signal">
                 {confidenceCorr !== null ? confidenceCorr.toFixed(2) : "not yet available"}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-muted">Composite ↔ forward return</p>
+              <p className="text-[10px] text-muted">Composite ↔ raw forward return</p>
               <p className="font-mono text-2xl font-bold text-signal">
                 {compositeCorr !== null ? compositeCorr.toFixed(2) : "not yet available"}
               </p>
@@ -129,7 +129,9 @@ export default async function ScorecardPage() {
           it was scored, across every score on record. A positive number for confidence means scores backed
           by more verified, primary-source data have tended to outperform scores resting on thinner or
           unconfirmed inputs, a test of whether data reliability itself predicts returns, not a
-          price-direction forecast on its own.
+          price-direction forecast on its own. The composite is built to predict risk-adjusted performance,
+          so this raw-return correlation is one of three intended measures; the drawdown and risk-adjusted
+          correlations come online once a price-history series is captured for each scored name.
         </p>
       </div>
 
