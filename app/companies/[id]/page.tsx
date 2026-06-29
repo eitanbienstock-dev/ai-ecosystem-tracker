@@ -106,7 +106,9 @@ export default async function CompanyDetailPage({
                 <span className="badge bg-panelhi text-[#e7e8ea]">{c.ai_category.replace(/_/g, " ")}</span>
                 {c.ai_materiality && (
                   <span className="text-xs text-muted">
-                    {c.ai_materiality.replace(/_/g, " ")} to the investment thesis
+                    {c.ai_materiality === "core_to_thesis"
+                      ? "core to the investment thesis"
+                      : `${c.ai_materiality.replace(/_/g, " ")} to the investment thesis`}
                   </span>
                 )}
               </div>

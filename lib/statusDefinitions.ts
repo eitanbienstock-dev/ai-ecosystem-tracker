@@ -1,6 +1,6 @@
 export const STATUS_DEFINITIONS: Record<string, string> = {
   watched: "Being tracked and researched, not yet funded. Manually ranked, move candidates up or down to reflect priority.",
-  holding: "Real capital deployed. Position entered through the promote flow.",
+  holding: "Real capital deployed. The position is live in a portfolio.",
   exited: "Previously held, all shares sold.",
   archived: "No longer active, either evaluated and passed on, or previously invested and since exited.",
   // Legacy values kept as fallbacks
