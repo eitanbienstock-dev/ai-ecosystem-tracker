@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getLivePrice } from '@/lib/marketData';
+
+const BENCHMARK_TICKER = 'SPY';
+const SECTOR_BENCHMARK_TICKER = 'SOXX';
 
 export async function GET(
   _request: NextRequest,
@@ -29,6 +33,24 @@ export async function POST(
     );
   }
 
+  // Capture the live SPY and SOXX prices at the moment a buy is recorded, so the
+  // benchmark comparison can measure each position from its own entry. Marked
+  // approximate when the transaction is back-dated, since the live quote then no
+  // longer matches the close on the recorded date. Sells need no entry snapshot.
+  let benchmarkPriceAtEntry: number | null = null;
+  let sectorBenchmarkPriceAtEntry: number | null = null;
+  let benchmarkPriceApprox = false;
+  if (transaction_type === 'buy') {
+    const [spy, soxx] = await Promise.all([
+      getLivePrice(BENCHMARK_TICKER),
+      getLivePrice(SECTOR_BENCHMARK_TICKER),
+    ]);
+    benchmarkPriceAtEntry = spy?.price ?? null;
+    sectorBenchmarkPriceAtEntry = soxx?.price ?? null;
+    const today = new Date().toISOString().slice(0, 10);
+    benchmarkPriceApprox = !!transacted_at && transacted_at !== today;
+  }
+
   const { data, error } = await supabase
     .from('portfolio_transactions')
     .insert({
@@ -40,6 +62,9 @@ export async function POST(
       note,
       transacted_at,
       allocation_override_pct: allocation_override_pct ?? null,
+      benchmark_price_at_entry: benchmarkPriceAtEntry,
+      sector_benchmark_price_at_entry: sectorBenchmarkPriceAtEntry,
+      benchmark_price_approx: benchmarkPriceApprox,
     })
     .select()
     .single();

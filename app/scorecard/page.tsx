@@ -1,7 +1,7 @@
 import { supabase, Company, Score } from "@/lib/supabase";
 import { getLivePrice } from "@/lib/marketData";
-import { computeBenchmarkRow } from "@/lib/portfolio";
 import ScorecardTable from "../ScorecardTable";
+import ScorecardBenchmark from "../ScorecardBenchmark";
 
 export const dynamic = "force-dynamic";
 
@@ -42,113 +42,6 @@ export default async function ScorecardPage() {
       if (p) liveByTicker.set(t as string, p.price);
     })
   );
-
-  // Positions are derived from real transactions across ALL portfolios, not the
-  // deprecated companies.entry_price / entry_date / shares_held columns. Per
-  // company: net shares, first-buy date (entry date), weighted-average entry
-  // price, and cost basis (the value-weighting basis for the aggregate).
-  const { data: txRows } = await supabase
-    .from("portfolio_transactions")
-    .select("company_id, transaction_type, shares, price_per_share, transacted_at");
-
-  type Position = {
-    netShares: number;
-    buyShares: number;
-    buyCost: number;
-    firstBuyDate: string | null;
-  };
-  const posByCompany = new Map<string, Position>();
-  for (const tx of (txRows ?? []) as any[]) {
-    const cid = tx.company_id as string;
-    const shares = Number(tx.shares);
-    const pos = posByCompany.get(cid) ?? { netShares: 0, buyShares: 0, buyCost: 0, firstBuyDate: null };
-    if (tx.transaction_type === "buy") {
-      pos.netShares += shares;
-      pos.buyShares += shares;
-      pos.buyCost += shares * Number(tx.price_per_share);
-      if (!pos.firstBuyDate || tx.transacted_at < pos.firstBuyDate) pos.firstBuyDate = tx.transacted_at;
-    } else if (tx.transaction_type === "sell") {
-      pos.netShares -= shares;
-    }
-    posByCompany.set(cid, pos);
-  }
-
-  const entryPriceByCompany = new Map<string, number>();
-  const costBasisByCompany = new Map<string, number>();
-  for (const [cid, pos] of posByCompany) {
-    if (pos.netShares <= 0 || pos.buyShares <= 0) continue;
-    const entryPrice = pos.buyCost / pos.buyShares;
-    entryPriceByCompany.set(cid, entryPrice);
-    costBasisByCompany.set(cid, pos.netShares * entryPrice);
-  }
-
-  const invested = (companies ?? []).filter(
-    (c: any) => (posByCompany.get(c.id)?.netShares ?? 0) > 0
-  ) as Company[];
-  const benchmarkTickers = Array.from(new Set(invested.map((c) => c.benchmark_ticker).filter(Boolean) as string[]));
-  const liveBenchmarkByTicker = new Map<string, number>();
-  await Promise.all(
-    benchmarkTickers.map(async (t) => {
-      const p = await getLivePrice(t);
-      if (p) liveBenchmarkByTicker.set(t, p.price);
-    })
-  );
-  const sectorBenchmarkTickers = Array.from(
-    new Set(invested.map((c) => c.sector_benchmark_ticker).filter(Boolean) as string[])
-  );
-  const liveSectorBenchmarkByTicker = new Map<string, number>();
-  await Promise.all(
-    sectorBenchmarkTickers.map(async (t) => {
-      const p = await getLivePrice(t);
-      if (p) liveSectorBenchmarkByTicker.set(t, p.price);
-    })
-  );
-
-  const benchmarkRows = invested.map((c) => {
-    const entryPrice = entryPriceByCompany.get(c.id) ?? null;
-    const livePrice = c.ticker ? liveByTicker.get(c.ticker) ?? null : null;
-    const liveBenchmarkPrice = c.benchmark_ticker ? liveBenchmarkByTicker.get(c.benchmark_ticker) ?? null : null;
-    const liveSectorBenchmarkPrice = c.sector_benchmark_ticker
-      ? liveSectorBenchmarkByTicker.get(c.sector_benchmark_ticker) ?? null
-      : null;
-    const { holdingReturnPct, benchmarkReturnPct, excessPct, sectorBenchmarkReturnPct, sectorExcessPct } =
-      computeBenchmarkRow(c, entryPrice, livePrice, liveBenchmarkPrice, liveSectorBenchmarkPrice);
-    // Aggregate weight is cost basis from transactions, not current market value.
-    const value = costBasisByCompany.get(c.id) ?? 0;
-    return {
-      company: c,
-      holdingReturnPct,
-      benchmarkReturnPct,
-      excessPct,
-      sectorBenchmarkReturnPct,
-      sectorExcessPct,
-      value,
-    };
-  });
-  const totalBenchmarkableValue = benchmarkRows
-    .filter((r) => r.excessPct !== null)
-    .reduce((a, r) => a + r.value, 0);
-  const weightedHoldingReturn =
-    totalBenchmarkableValue > 0
-      ? benchmarkRows
-          .filter((r) => r.excessPct !== null)
-          .reduce((a, r) => a + (r.holdingReturnPct ?? 0) * (r.value / totalBenchmarkableValue), 0)
-      : null;
-  const weightedBenchmarkReturn =
-    totalBenchmarkableValue > 0
-      ? benchmarkRows
-          .filter((r) => r.excessPct !== null)
-          .reduce((a, r) => a + (r.benchmarkReturnPct ?? 0) * (r.value / totalBenchmarkableValue), 0)
-      : null;
-  const totalSectorBenchmarkableValue = benchmarkRows
-    .filter((r) => r.sectorExcessPct !== null)
-    .reduce((a, r) => a + r.value, 0);
-  const weightedSectorBenchmarkReturn =
-    totalSectorBenchmarkableValue > 0
-      ? benchmarkRows
-          .filter((r) => r.sectorExcessPct !== null)
-          .reduce((a, r) => a + (r.sectorBenchmarkReturnPct ?? 0) * (r.value / totalSectorBenchmarkableValue), 0)
-      : null;
 
   const allScores = (scores ?? []) as Score[];
 
@@ -240,99 +133,7 @@ export default async function ScorecardPage() {
         </p>
       </div>
 
-      <div className="mb-6 rounded border border-line bg-panel p-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Portfolio vs benchmark</p>
-        {benchmarkRows.length === 0 ? (
-          <p className="text-sm text-muted">No invested holdings yet.</p>
-        ) : (
-          <>
-            <div className="mb-3 flex gap-8">
-              <div>
-                <p className="text-[10px] text-muted">Portfolio return since entry, value-weighted</p>
-                <p className="font-mono text-2xl font-bold text-[#e7e8ea]">
-                  {weightedHoldingReturn !== null ? `${weightedHoldingReturn >= 0 ? "+" : ""}${weightedHoldingReturn.toFixed(1)}%` : "not yet available"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted">S&amp;P 500 over the same entry windows</p>
-                <p className="font-mono text-2xl font-bold text-muted">
-                  {weightedBenchmarkReturn !== null ? `${weightedBenchmarkReturn >= 0 ? "+" : ""}${weightedBenchmarkReturn.toFixed(1)}%` : "not yet available"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted">SOXX semiconductor index, same windows</p>
-                <p className="font-mono text-2xl font-bold text-muted">
-                  {weightedSectorBenchmarkReturn !== null ? `${weightedSectorBenchmarkReturn >= 0 ? "+" : ""}${weightedSectorBenchmarkReturn.toFixed(1)}%` : "not yet available"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted">Excess vs S&amp;P 500</p>
-                <p
-                  className={`font-mono text-2xl font-bold ${
-                    weightedHoldingReturn !== null && weightedBenchmarkReturn !== null
-                      ? weightedHoldingReturn - weightedBenchmarkReturn >= 0
-                        ? "text-rise"
-                        : "text-fall"
-                      : "text-muted"
-                  }`}
-                >
-                  {weightedHoldingReturn !== null && weightedBenchmarkReturn !== null
-                    ? `${weightedHoldingReturn - weightedBenchmarkReturn >= 0 ? "+" : ""}${(weightedHoldingReturn - weightedBenchmarkReturn).toFixed(1)}pts`
-                    : "not yet available"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted">Excess vs sector</p>
-                <p
-                  className={`font-mono text-2xl font-bold ${
-                    weightedHoldingReturn !== null && weightedSectorBenchmarkReturn !== null
-                      ? weightedHoldingReturn - weightedSectorBenchmarkReturn >= 0
-                        ? "text-rise"
-                        : "text-fall"
-                      : "text-muted"
-                  }`}
-                >
-                  {weightedHoldingReturn !== null && weightedSectorBenchmarkReturn !== null
-                    ? `${weightedHoldingReturn - weightedSectorBenchmarkReturn >= 0 ? "+" : ""}${(weightedHoldingReturn - weightedSectorBenchmarkReturn).toFixed(1)}pts`
-                    : "not yet available"}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              {benchmarkRows.map((r) => (
-                <p key={r.company.id} className="text-xs text-muted">
-                  <span className="font-medium text-[#e7e8ea]">{r.company.name}</span>{" "}
-                  {r.holdingReturnPct !== null ? `${r.holdingReturnPct >= 0 ? "+" : ""}${r.holdingReturnPct.toFixed(1)}%` : "not yet available"}
-                  {" vs "}
-                  {r.company.benchmark_ticker ?? "benchmark"}{" "}
-                  {r.benchmarkReturnPct !== null ? `${r.benchmarkReturnPct >= 0 ? "+" : ""}${r.benchmarkReturnPct.toFixed(1)}%` : "not yet available"}
-                  {r.excessPct !== null && (
-                    <span className={r.excessPct >= 0 ? "text-rise" : "text-fall"}>
-                      {" "}({r.excessPct >= 0 ? "+" : ""}{r.excessPct.toFixed(1)}pts)
-                    </span>
-                  )}
-                  {" / vs "}
-                  {r.company.sector_benchmark_ticker ?? "sector"}{" "}
-                  {r.sectorBenchmarkReturnPct !== null ? `${r.sectorBenchmarkReturnPct >= 0 ? "+" : ""}${r.sectorBenchmarkReturnPct.toFixed(1)}%` : "not yet available"}
-                  {r.sectorExcessPct !== null && (
-                    <span className={r.sectorExcessPct >= 0 ? "text-rise" : "text-fall"}>
-                      {" "}({r.sectorExcessPct >= 0 ? "+" : ""}{r.sectorExcessPct.toFixed(1)}pts)
-                    </span>
-                  )}
-                </p>
-              ))}
-            </div>
-            <p className="mt-3 text-[11px] text-muted">
-              Each holding is compared against both the S&amp;P 500 and the SOXX semiconductor index over the
-              same window, from that holding&apos;s own entry date to now, not a shared calendar period, since
-              capital was deployed on different dates. The sector benchmark exists because a concentrated AI
-              infrastructure book can beat the broad market just by being in a hot sector during a sector
-              boom, that alone is not evidence of selection skill. Beating SOXX specifically is a more honest
-              signal. The aggregate weights each holding by its current position value.
-            </p>
-          </>
-        )}
-      </div>
+      <ScorecardBenchmark />
 
       <ScorecardTable rows={rows} />
     </div>

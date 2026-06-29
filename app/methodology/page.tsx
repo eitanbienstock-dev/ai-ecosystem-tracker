@@ -519,22 +519,26 @@ export default function MethodologyPage() {
           Benchmark comparison
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Each invested holding is compared against both the S&amp;P 500 and the SOXX semiconductor index
-          over the same window, from that holding&apos;s own entry date to now, not a shared calendar
-          period, since capital was deployed on different dates and a single shared window would
-          misrepresent the comparison for holdings entered at different times. The entry date is the date of
-          the company&apos;s first buy transaction in the ledger, and the holding&apos;s entry price is the
-          weighted-average cost across its buys, both derived from the transaction ledger rather than a
-          stored snapshot. Each benchmark&apos;s price at that entry is captured on the company record and
-          compared against its live price today. The sector benchmark exists because this
-          book is deliberately concentrated in AI infrastructure, semiconductors most of all, and beating
-          the S&amp;P 500 during an AI-driven semiconductor boom proves very little about selection skill
-          on its own. Beating SOXX specifically, the sector that is actually driving most of the book's
-          concentration, is the more honest test. The portfolio-level number weights each holding by its
-          cost basis. This is the explicit test of the standing goal: deep ecosystem
-          intelligence should produce returns exceeding the broad market and the sector it sits in, not
-          just positive returns in isolation, and not just a sector tailwind mistaken for skill. Shown on
-          the{" "}
+          Benchmark comparison is shown per portfolio: the Scorecard has its own portfolio selector, and the
+          whole comparison is recomputed for the selected portfolio alone. Each held position is compared
+          against both the S&amp;P 500 and the SOXX semiconductor index over the same window, from that
+          position&apos;s own entry date to now, not a shared calendar period, since capital was deployed on
+          different dates and a single shared window would misrepresent the comparison. The entry date is the
+          date of the position&apos;s first buy transaction in that specific portfolio, so the same company
+          can have a different entry window in a manual portfolio than in the model portfolio. The
+          position&apos;s entry price is the weighted-average cost across its buys, and the S&amp;P 500 and
+          SOXX prices at that entry are captured on the first buy transaction itself, then compared against
+          their live prices today.
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Finnhub&apos;s free tier does not serve historical index prices, so benchmark entry prices are
+          captured live at the moment a buy is recorded. Positions whose entry price could not be captured on
+          the exact entry date, including those recorded before this capture existed, are marked
+          approximate so the comparison is read as indicative rather than exact. The sector benchmark exists
+          because a book deliberately concentrated in AI infrastructure can beat the broad market just by
+          being in a hot sector, so beating SOXX specifically is the more honest test. The portfolio-level
+          number weights each position by its cost basis. Empty portfolios show a prompt to add positions
+          instead. Shown on the{" "}
           <Link href="/scorecard" className="text-signal hover:underline">
             Scorecard
           </Link>
