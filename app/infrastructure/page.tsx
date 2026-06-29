@@ -7,7 +7,7 @@ type Company = {
   research_status: string; ai_category: string | null;
   sector_tags: string[] | null; description: string | null;
   moat_description: string | null;
-  ecosystem_leverage_direction: string | null;
+  value_capture_direction: string | null;
   ecosystem_trajectory: string | null;
 };
 
@@ -49,7 +49,7 @@ function fitSummary(c: Company): string {
   const parts: string[] = [];
   if (c.description) parts.push(c.description.trim());
   if (c.moat_description) parts.push(c.moat_description.trim());
-  const lev = c.ecosystem_leverage_direction === "hard_to_replace" ? "hard to replace within its layer" : c.ecosystem_leverage_direction === "commoditized" ? "operating in a commoditized layer" : null;
+  const lev = c.value_capture_direction === "hard_to_replace" ? "hard to replace within its layer" : c.value_capture_direction === "commoditized" ? "operating in a commoditized layer" : null;
   const traj = c.ecosystem_trajectory === "strengthening" ? "with a strengthening ecosystem position" : c.ecosystem_trajectory === "weakening" ? "with a weakening ecosystem position" : c.ecosystem_trajectory === "stable" ? "with a stable ecosystem position" : null;
   const extras = [lev, traj].filter(Boolean);
   if (extras.length) parts.push(extras.join(", ") + ".");
@@ -59,7 +59,7 @@ function fitSummary(c: Company): string {
 export default async function InfrastructurePage() {
   const { data } = await supabase
     .from("companies")
-    .select("id,name,ticker,ai_category,sector_tags,research_status,description,moat_description,ecosystem_leverage_direction,ecosystem_trajectory")
+    .select("id,name,ticker,ai_category,sector_tags,research_status,description,moat_description,value_capture_direction,ecosystem_trajectory")
     .in("research_status", ["holding", "watched"])
     .order("name", { ascending: true });
 

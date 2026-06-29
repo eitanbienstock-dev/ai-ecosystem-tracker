@@ -276,14 +276,14 @@ export default async function CompanyDetailPage({
         <Section title="Ecosystem position">
           <Row
             label={
-              <span title={c.ecosystem_leverage_direction ? LEVERAGE_DEFINITIONS[c.ecosystem_leverage_direction] : ""} className="cursor-help underline decoration-dotted decoration-muted underline-offset-2">
+              <span title={c.value_capture_direction ? LEVERAGE_DEFINITIONS[c.value_capture_direction] : ""} className="cursor-help underline decoration-dotted decoration-muted underline-offset-2">
                 Leverage
               </span>
             }
-            value={c.ecosystem_leverage_direction?.replace("_", " ") ?? "not assessed"}
+            value={c.value_capture_direction?.replace("_", " ") ?? "not assessed"}
           />
-          {c.ecosystem_leverage_direction && (
-            <p className="mb-2 text-[11px] text-muted">{LEVERAGE_DEFINITIONS[c.ecosystem_leverage_direction]}</p>
+          {c.value_capture_direction && (
+            <p className="mb-2 text-[11px] text-muted">{LEVERAGE_DEFINITIONS[c.value_capture_direction]}</p>
           )}
           <Row
             label={

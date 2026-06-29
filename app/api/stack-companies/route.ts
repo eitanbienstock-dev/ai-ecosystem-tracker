@@ -68,7 +68,7 @@ function buildFitSummary(c: Record<string, any>): string {
   if (c.description) parts.push(c.description.trim());
   if (c.moat_description) parts.push(c.moat_description.trim());
 
-  const leverage = c.ecosystem_leverage_direction;
+  const leverage = c.value_capture_direction;
   const trajectory = c.ecosystem_trajectory;
   if (leverage || trajectory) {
     const leverageLabel =
@@ -95,7 +95,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('companies')
     .select(
-      'id, name, ticker, ai_category, sector_tags, research_status, description, moat_description, ecosystem_leverage_direction, ecosystem_trajectory'
+      'id, name, ticker, ai_category, sector_tags, research_status, description, moat_description, value_capture_direction, ecosystem_trajectory'
     )
     .in('research_status', ['holding', 'watched'])
     .order('name', { ascending: true });

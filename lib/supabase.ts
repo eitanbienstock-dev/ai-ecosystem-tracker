@@ -40,7 +40,7 @@ export type Company = {
   insider_transaction_signal: string | null;
   moat_description: string | null;
   customer_concentration_risk: string | null;
-  ecosystem_leverage_direction: string | null;
+  value_capture_direction: string | null;
   ecosystem_trajectory: string | null;
   ai_materiality: string | null;
   circularity_note: string | null;
