@@ -251,6 +251,18 @@ export default function PortfolioSection() {
 
   const totalCostBasis = positions.reduce((sum, p) => sum + p.total_cost_basis, 0);
 
+  // Portfolio summary: current value uses live Finnhub prices (falling back to
+  // avg cost for any ticker whose quote failed, so a missing quote contributes
+  // zero P&L rather than dropping the position). Held back until prices resolve.
+  const pricesReady = positions.length > 0 && !loadingPrices && livePriceMap.size > 0;
+  const currentValue = positions.reduce((sum, p) => {
+    const live = p.ticker ? livePriceMap.get(p.ticker) : null;
+    const price = live != null ? live : p.weighted_avg_cost;
+    return sum + price * p.shares_held;
+  }, 0);
+  const totalPnl = currentValue - totalCostBasis;
+  const returnPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
+
   // Sort by confidence desc, composite desc
   const sortedPositions = [...positions].sort((a, b) => {
     const confDiff = (b.confidence_score ?? -1) - (a.confidence_score ?? -1);
@@ -322,6 +334,41 @@ export default function PortfolioSection() {
           <p className="text-sm text-muted">
             No positions in this portfolio. Promote a company from the pipeline to get started.
           </p>
+        </div>
+      )}
+
+      {hasPortfolios && !loadingPositions && positions.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-end gap-8 rounded border border-line bg-panel px-4 py-2.5">
+          <div>
+            <div className="text-[10px] text-muted">Invested</div>
+            <div className="font-mono text-sm font-medium text-[#e7e8ea]">${totalCostBasis.toFixed(0)}</div>
+          </div>
+          <div>
+            <div className="text-[10px] text-muted">Current value</div>
+            <div className={`font-mono text-sm font-medium ${pricesReady ? "text-[#e7e8ea]" : "text-muted"}`}>
+              {pricesReady ? `$${currentValue.toFixed(0)}` : "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-muted">Total P&L</div>
+            <div
+              className={`font-mono text-sm font-medium ${
+                pricesReady ? (totalPnl >= 0 ? "text-rise" : "text-fall") : "text-muted"
+              }`}
+            >
+              {pricesReady ? fmtPnl(totalPnl) : "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-muted">Return</div>
+            <div
+              className={`font-mono text-sm font-medium ${
+                pricesReady ? (returnPct >= 0 ? "text-rise" : "text-fall") : "text-muted"
+              }`}
+            >
+              {pricesReady ? `${returnPct >= 0 ? "+" : ""}${returnPct.toFixed(1)}%` : "—"}
+            </div>
+          </div>
         </div>
       )}
 

@@ -342,6 +342,14 @@ export default function MethodologyPage() {
           company&apos;s research_status is derived from net shares across all portfolios combined:
           any net-positive position anywhere means Holding; fully sold across all portfolios means Exited.
         </p>
+        <p className="mt-3 text-sm leading-relaxed text-[#cfd1d5]">
+          Each portfolio view, manual or model, shows a summary bar across the top of its positions with
+          four figures: total invested (the sum of every position&apos;s cost basis from the ledger),
+          current value (each position&apos;s shares at its live Finnhub price), total profit and loss in
+          dollars (current value minus invested), and return as a percentage of invested. The three
+          live-price figures update automatically once the Finnhub quotes load and read as a dash until
+          then.
+        </p>
       </section>
 
       <section id="composite-score" className="mb-8">
