@@ -590,9 +590,9 @@ export default function MethodologyPage() {
           composite is built to predict risk-adjusted performance, that performance is measured three ways
           that are never conflated: raw return since scoring, drawdown, and risk-adjusted return, with the
           risk-adjusted correlation the standard the framework holds itself to. Raw forward return is
-          tracked today; the drawdown and risk-adjusted measures come online as a price-history series is
-          captured for each scored name, since both need the path of the price between scoring and now, not
-          just the two endpoints. A positive number for confidence means scores backed by more verified,
+          tracked today; a daily price snapshot now records the path of each scored name, and the drawdown
+          and risk-adjusted correlations populate as that series builds, since both need the path of the
+          price between scoring and now, not just the two endpoints. A positive number for confidence means scores backed by more verified,
           primary-source data have tended to outperform scores resting on thinner inputs. This is a
           deliberately strict methodology: no correlation is shown until there are at least 20 graded scores
           averaging at least 30 days of tracking, since a correlation computed on too little data is noise
