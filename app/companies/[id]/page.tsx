@@ -34,6 +34,21 @@ function trendArrow(trend: string | null) {
   return <span className="text-muted">no trend data</span>;
 }
 
+function changeColor(pct: number | null, fallback: string) {
+  if (pct === null) return fallback;
+  return pct >= 0 ? "text-rise" : "text-fall";
+}
+
+function ChangeBadge({ pct }: { pct: number | null }) {
+  if (pct === null) return null;
+  return (
+    <span className={`ml-1.5 font-mono text-xs ${pct >= 0 ? "text-rise" : "text-fall"}`}>
+      {pct >= 0 ? "▲" : "▼"} {pct >= 0 ? "+" : ""}
+      {pct.toFixed(1)}%
+    </span>
+  );
+}
+
 export default async function CompanyDetailPage({
   params,
 }: {
@@ -137,18 +152,28 @@ export default async function CompanyDetailPage({
         <div className="text-right">
           {liveCap ? (
             <div>
-              <span className="font-mono text-lg text-[#e7e8ea]">{fmtMarketCap(liveCap.marketCap)}</span>
+              <span className={`font-mono text-lg ${changeColor(livePrice?.changePct ?? null, "text-[#e7e8ea]")}`}>
+                {fmtMarketCap(liveCap.marketCap)}
+              </span>
               <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-muted align-middle" title="Live data" />
               {livePrice && (
-                <span className="ml-2 font-mono text-sm text-muted">${livePrice.price.toFixed(2)}/sh</span>
+                <span className={`ml-2 font-mono text-sm ${changeColor(livePrice.changePct, "text-muted")}`}>
+                  ${livePrice.price.toFixed(2)}/sh
+                  <ChangeBadge pct={livePrice.changePct} />
+                </span>
               )}
               <p className="text-[11px] text-muted">live via Finnhub, {new Date(liveCap.fetchedAt).toLocaleTimeString()}</p>
             </div>
           ) : (
             <div>
-              <span className="font-mono text-lg text-[#e7e8ea]">{fmtMarketCap(c.market_cap)}</span>
+              <span className={`font-mono text-lg ${changeColor(livePrice?.changePct ?? null, "text-[#e7e8ea]")}`}>
+                {fmtMarketCap(c.market_cap)}
+              </span>
               {livePrice && (
-                <span className="ml-2 font-mono text-sm text-muted">${livePrice.price.toFixed(2)}/sh</span>
+                <span className={`ml-2 font-mono text-sm ${changeColor(livePrice.changePct, "text-muted")}`}>
+                  ${livePrice.price.toFixed(2)}/sh
+                  <ChangeBadge pct={livePrice.changePct} />
+                </span>
               )}
               <p className="text-[11px] text-muted">
                 {c.market_cap === null
