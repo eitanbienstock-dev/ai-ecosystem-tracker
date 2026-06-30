@@ -42,6 +42,11 @@ export type Company = {
   institutional_ownership_trend: string | null;
   capital_allocation_assessment: string | null;
   leadership_track_record: string | null;
+  ceo_start_date: string | null;
+  ceo_origin: string | null;
+  ceo_background_type: string | null;
+  prior_public_company_ceo: boolean | null;
+  board_leadership_structure: string | null;
   ai_claims_credibility: string | null;
   insider_transaction_signal: string | null;
   moat_description: string | null;

@@ -311,6 +311,54 @@ export default async function CompanyDetailPage({
             <p className="mt-2 text-sm text-[#cfd1d5]">{c.capital_allocation_assessment}</p>
           )}
 
+          {(c.ceo_start_date || c.ceo_origin || c.ceo_background_type || c.prior_public_company_ceo !== null || c.board_leadership_structure) && (
+            <>
+              <h3 className="mb-1 mt-4 text-[10px] font-semibold uppercase tracking-wide text-signal">
+                CEO profile
+              </h3>
+              {(c.ceo_origin || c.ceo_start_date) && (
+                <Row
+                  label="Origin"
+                  value={[
+                    c.ceo_origin ? c.ceo_origin.replace(/_/g, " ") : null,
+                    c.ceo_start_date ? `CEO since ${formatDate(c.ceo_start_date)}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                />
+              )}
+              {(c.ceo_background_type || c.prior_public_company_ceo !== null) && (
+                <Row
+                  label="Background"
+                  value={[
+                    c.ceo_background_type ? c.ceo_background_type.replace(/_/g, " ") : null,
+                    c.prior_public_company_ceo === true
+                      ? "repeat public CEO"
+                      : c.prior_public_company_ceo === false
+                      ? "first public CEO role"
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                />
+              )}
+              {c.board_leadership_structure && (
+                <Row
+                  label="Board"
+                  value={
+                    c.board_leadership_structure === "combined"
+                      ? "Combined, no independent chair"
+                      : c.board_leadership_structure === "combined_with_lead_independent_director"
+                      ? "Combined, lead independent director"
+                      : c.board_leadership_structure === "split"
+                      ? "Split (independent chair)"
+                      : c.board_leadership_structure
+                  }
+                />
+              )}
+            </>
+          )}
+
           <h3 className="mb-1 mt-4 text-[10px] font-semibold uppercase tracking-wide text-signal">
             Track record
           </h3>
@@ -320,7 +368,6 @@ export default async function CompanyDetailPage({
             <p className="text-xs text-muted">Not yet researched.</p>
           )}
         </Section>
-
         <Section title="AI-specific moat">
           {c.moat_description ? (
             <p className="text-sm text-[#cfd1d5]">{c.moat_description}</p>
