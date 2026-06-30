@@ -31,11 +31,17 @@ export type Company = {
   cash_flow_status: string | null;
   valuation_metric: string | null;
   valuation_multiple: number | null;
+  cash_and_equivalents: number | null;
+  non_current_debt: number | null;
+  capex_actual: number | null;
+  balance_sheet_period: string | null;
+  balance_sheet_note: string | null;
   insider_ownership_pct: number | null;
   insider_ownership_trend: string | null;
   institutional_ownership_pct: number | null;
   institutional_ownership_trend: string | null;
   capital_allocation_assessment: string | null;
+  leadership_track_record: string | null;
   ai_claims_credibility: string | null;
   insider_transaction_signal: string | null;
   moat_description: string | null;

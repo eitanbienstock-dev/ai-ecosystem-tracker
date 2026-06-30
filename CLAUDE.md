@@ -20,7 +20,9 @@ Next.js 14 (App Router) + Supabase + Tailwind + Vercel
 - When fixing a data error, clean surrounding note text of process narrative in the same pass.
 
 ## Research and data discipline
-- Never leave financial fields null (revenue_growth_pct, gross_margin_pct, cash_flow_status, valuation_metric/multiple, insider_ownership_pct, institutional_ownership_pct) without first reading the company's actual 10-Q/10-K on EDGAR. Retail aggregators are not substitutes. If null after checking the filing, note it was checked but not found.
+- Never leave financial fields null (revenue_growth_pct, gross_margin_pct, cash_flow_status, valuation_metric/multiple, insider_ownership_pct, institutional_ownership_pct, cash_and_equivalents, non_current_debt, capex_actual) without first reading the company's actual 10-Q/10-K on EDGAR. Retail aggregators are not substitutes. If null after checking the filing, note it was checked but not found.
+- cash_and_equivalents, non_current_debt, and capex_actual are point-in-time balance sheet figures with their own balance_sheet_period date, not the YoY financial_data_period used for revenue/margin. capex_actual is the latest disclosed actual, never a forward guidance range, guidance stays as prose in balance_sheet_note.
+- leadership_track_record: proxy statements and AGM filings carry officer bios and count as the primary source for this field, same standing as a 10-Q for revenue. Company site bios and reputable business press are fallback only. CEO by default; only add another named executive when their specific prior history is material to the thesis, not for completeness.
 - Every new score must include price_at_scoring, price_at_scoring_date, and price_source. Use Finnhub's live quote endpoint (free tier). The historical candle endpoint returns no data on free tier — treat as paid-only.
 - When a data error is fixed on one company, check all active companies for the same issue before considering it done.
 - When a new feature depends on a database field, verify real data populates that field for existing records. A passing build is not sufficient.

@@ -20,6 +20,13 @@ function fmtMarketCap(value: number | null) {
   return `$${value}`;
 }
 
+function fmtUSD(value: number | null) {
+  if (value === null) return "not disclosed";
+  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  return `$${value.toLocaleString()}`;
+}
+
 function trendArrow(trend: string | null) {
   if (trend === "rising") return <span className="text-rise">▲ rising</span>;
   if (trend === "falling") return <span className="text-fall">▼ falling</span>;
@@ -224,6 +231,24 @@ export default async function CompanyDetailPage({
                 : "not recorded"
             }
           />
+          {latestScore?.financial_quality_note && (
+            <p className="mt-2 text-sm text-[#cfd1d5]">{latestScore.financial_quality_note}</p>
+          )}
+
+          <h3 className="mb-1 mt-4 text-[10px] font-semibold uppercase tracking-wide text-signal">
+            Balance sheet
+          </h3>
+          <p className="mb-2 text-[11px] text-muted">
+            as of {c.balance_sheet_period ? formatDate(c.balance_sheet_period) : "unknown date"}
+          </p>
+          <Row label="Cash & equivalents" value={fmtUSD(c.cash_and_equivalents)} />
+          <Row label="Non-current debt" value={fmtUSD(c.non_current_debt)} />
+          <Row label="Capex, latest actual" value={fmtUSD(c.capex_actual)} />
+          {c.balance_sheet_note ? (
+            <p className="mt-2 text-sm text-[#cfd1d5]">{c.balance_sheet_note}</p>
+          ) : (
+            <p className="mt-2 text-xs text-muted">Not yet researched.</p>
+          )}
         </Section>
 
         <Section title="Management & ownership">
@@ -258,7 +283,16 @@ export default async function CompanyDetailPage({
             <p className="mb-2 text-[11px] text-muted">{INSIDER_SIGNAL_DEFINITIONS[c.insider_transaction_signal]}</p>
           )}
           {c.capital_allocation_assessment && (
-            <p className="mt-2 text-xs text-muted">{c.capital_allocation_assessment}</p>
+            <p className="mt-2 text-sm text-[#cfd1d5]">{c.capital_allocation_assessment}</p>
+          )}
+
+          <h3 className="mb-1 mt-4 text-[10px] font-semibold uppercase tracking-wide text-signal">
+            Track record
+          </h3>
+          {c.leadership_track_record ? (
+            <p className="text-sm text-[#cfd1d5]">{c.leadership_track_record}</p>
+          ) : (
+            <p className="text-xs text-muted">Not yet researched.</p>
           )}
         </Section>
 

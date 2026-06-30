@@ -12,7 +12,7 @@ const DIMENSIONS = [
   {
     label: "Financial quality",
     weight: 20,
-    def: "Revenue growth, gross margin, cash flow, and profitability, taken directly from the most recent 10-Q or 10-K rather than aggregator sites.",
+    def: "Revenue growth, gross margin, cash flow, profitability, and balance sheet strength, cash, debt, and capex, taken directly from the most recent 10-Q or 10-K rather than aggregator sites.",
   },
   {
     label: "AI moat",
@@ -22,7 +22,7 @@ const DIMENSIONS = [
   {
     label: "Management & ownership",
     weight: 15,
-    def: "Insider and institutional ownership trends, whether AI-related claims hold up under scrutiny, and the insider transaction signal from Form 4 filings: net buying, net selling, or mixed/neutral, where open-market purchases are the strongest management-conviction signal available since they are rare and discretionary.",
+    def: "Insider and institutional ownership trends, whether AI-related claims hold up under scrutiny, the insider transaction signal from Form 4 filings: net buying, net selling, or mixed/neutral, where open-market purchases are the strongest management-conviction signal available since they are rare and discretionary, and the CEO's prior track record as a signal of execution ability.",
   },
   {
     label: "Catalyst clarity",
@@ -605,11 +605,16 @@ export default function MethodologyPage() {
           Data sourcing discipline
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Before leaving a financial field null, revenue growth, margin, cash flow, valuation, or ownership,
-          the company&apos;s most recent 10-Q or 10-K is checked directly. Retail aggregator sites are not
-          treated as a substitute for the primary filing. Where a figure genuinely cannot be confirmed even
-          after checking, that is recorded explicitly as checked but not found, distinct from a field that
-          simply has not been looked at yet. The{" "}
+          Before leaving a financial field null, revenue growth, margin, cash flow, valuation, ownership,
+          cash and equivalents, non-current debt, or capex, the company&apos;s most recent 10-Q or 10-K is
+          checked directly. Retail aggregator sites are not treated as a substitute for the primary filing.
+          Cash, debt, and capex are point-in-time balance sheet figures, not a year-over-year window, so
+          they carry their own as-of date rather than reusing the income-statement period. Capex is the
+          most recent disclosed actual, not forward guidance, guidance ranges stay in the accompanying
+          narrative as prose rather than a stored number, since a range does not fit a clean numeric field
+          and ages quickly. Where a figure genuinely cannot be confirmed even after checking, that is
+          recorded explicitly as checked but not found, distinct from a field that simply has not been
+          looked at yet. The{" "}
           <Link href="/audit" className="text-signal hover:underline">
             Data quality
           </Link>{" "}
@@ -620,6 +625,15 @@ export default function MethodologyPage() {
           catches arithmetic, internal inconsistency, and staleness, not whether a primary source was
           genuinely checked, that part stays a matter of discipline, not something software can verify on
           its own.
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-[#cfd1d5]">
+          The CEO&apos;s prior track record is sourced the same way, primary filing first, proxy statements
+          and AGM filings carry officer biographies and count as the primary source for this field the same
+          way the income statement does for revenue. Company site bios and reputable business press are the
+          fallback only where the filing genuinely does not cover it. Other named executives are included
+          only where their specific history is material to the thesis, a CFO whose prior history signals
+          something concrete earns a sentence, one who is simply competent and unremarkable does not, and
+          that omission is itself the assessment rather than a research gap.
         </p>
       </section>
 
