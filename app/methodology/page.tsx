@@ -32,7 +32,7 @@ const DIMENSIONS = [
   {
     label: "Valuation",
     weight: 10,
-    def: "Price relative to fundamentals. Weighted lowest deliberately, since this is a positioning framework built around ecosystem dependency, not a valuation screen.",
+    def: "How much of a company's growth and quality the current price has already paid for, judged on forward, growth-adjusted, sector-relative multiples rather than absolute trailing ones. A high score means the price leaves room; a low score means the price already embeds the thesis. It runs both ways: a low multiple on a slow-growing or structurally pressured business is not a high score, while a rich multiple on a hypergrowth, high-margin leader can still score moderately when the growth justifies it. The ecosystem or sector boom is not credited here, since it is already scored in the ecosystem dimension. Weighted lowest deliberately, since this is a positioning framework built around ecosystem dependency, not a valuation screen.",
   },
 ];
 
