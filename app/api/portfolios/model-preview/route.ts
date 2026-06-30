@@ -17,18 +17,20 @@ function latestScoresByCompany(
   return map;
 }
 
-// GET: return all watched/holding companies with their latest scores, available for model portfolio construction
+// GET: return all watched/holding companies with their latest scores, ai_category,
+// research_status, and disclosed partnerships. Used for model portfolio construction
+// and for the concentration/confidence checks in the manual Add Positions flow.
 export async function GET() {
   const { data: companies, error: compError } = await supabase
     .from('companies')
-    .select('id, name, ticker')
+    .select('id, name, ticker, ai_category, research_status')
     .in('research_status', ['watched', 'holding'])
     .order('name', { ascending: true });
 
   if (compError) return NextResponse.json({ error: compError.message }, { status: 500 });
 
   const companyIds = (companies ?? []).map((c) => c.id);
-  if (companyIds.length === 0) return NextResponse.json({ companies: [] });
+  if (companyIds.length === 0) return NextResponse.json({ companies: [], partnerships: [] });
 
   const { data: scoreRows, error: scoreError } = await supabase
     .from('scores')
@@ -38,6 +40,13 @@ export async function GET() {
 
   if (scoreError) return NextResponse.json({ error: scoreError.message }, { status: 500 });
 
+  const { data: partnershipRows, error: partnerError } = await supabase
+    .from('partnerships')
+    .select('company_id, partner_name')
+    .in('company_id', companyIds);
+
+  if (partnerError) return NextResponse.json({ error: partnerError.message }, { status: 500 });
+
   const scoreMap = latestScoresByCompany(scoreRows ?? []);
 
   const result = (companies ?? []).map((c) => {
@@ -46,12 +55,14 @@ export async function GET() {
       company_id: c.id,
       name: c.name,
       ticker: c.ticker,
+      ai_category: c.ai_category,
+      research_status: c.research_status,
       composite_score: scores?.composite_score ?? null,
       confidence_score: scores?.confidence_score ?? null,
     };
   });
 
-  return NextResponse.json({ companies: result });
+  return NextResponse.json({ companies: result, partnerships: partnershipRows ?? [] });
 }
 
 // POST: run model allocation preview — read-only, does not write to the database

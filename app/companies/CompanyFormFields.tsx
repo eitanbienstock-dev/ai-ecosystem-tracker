@@ -110,8 +110,9 @@ export default function CompanyFormFields({ company }: { company?: Company }) {
           ))}
         </select>
         <p className="mt-1 text-xs text-muted">
-          Add to portfolio through the dedicated promote flow, not this form — it captures entry price,
-          shares, and portfolio assignment.
+          Add to a portfolio through Add positions on the portfolio card, not this form. That flow
+          captures entry price, shares, and portfolio assignment, and surfaces any confidence or
+          concentration flags before capital is committed.
         </p>
       </Field>
 

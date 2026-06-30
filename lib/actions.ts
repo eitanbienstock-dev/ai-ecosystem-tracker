@@ -3,10 +3,6 @@
 import { supabase } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getLivePrice } from "@/lib/marketData";
-
-const BENCHMARK_TICKER = "SPY";
-const SECTOR_BENCHMARK_TICKER = "SOXX";
 
 const ORG_ID = process.env.DEFAULT_ORG_ID as string;
 
@@ -77,58 +73,6 @@ export async function createCompany(formData: FormData) {
 
   revalidatePath("/");
   redirect(`/companies/${data.id}`);
-}
-
-export async function promoteToInvested(companyId: string, formData: FormData) {
-  const { data: current } = await supabase
-    .from("companies")
-    .select("research_status")
-    .eq("id", companyId)
-    .single();
-  if (current?.research_status === "holding") {
-    throw new Error("This company is already a holding. Use Trim or Exit instead of promoting it again.");
-  }
-
-  const entryPrice = Number(formData.get("entry_price") || 0);
-  const shares = Number(formData.get("shares") || 0);
-  const note = String(formData.get("note") || "");
-  const today = new Date().toISOString().slice(0, 10);
-
-  const benchmarkQuote = await getLivePrice(BENCHMARK_TICKER);
-  const sectorBenchmarkQuote = await getLivePrice(SECTOR_BENCHMARK_TICKER);
-
-  const { error: updateError } = await supabase
-    .from("companies")
-    .update({
-      research_status: "holding",
-      entry_date: today,
-      entry_price: entryPrice,
-      shares_held: shares,
-      benchmark_ticker: BENCHMARK_TICKER,
-      benchmark_price_at_entry: benchmarkQuote?.price ?? null,
-      sector_benchmark_ticker: SECTOR_BENCHMARK_TICKER,
-      sector_benchmark_price_at_entry: sectorBenchmarkQuote?.price ?? null,
-      last_reviewed_at: today,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", companyId);
-
-  if (updateError) throw new Error(updateError.message);
-
-  const { error: logError } = await supabase.from("decision_log").insert({
-    company_id: companyId,
-    entry_type: "initiated",
-    entry_date: today,
-    shares_delta: shares,
-    price: entryPrice,
-    note: note || null,
-  });
-
-  if (logError) throw new Error(logError.message);
-
-  revalidatePath("/");
-  revalidatePath(`/companies/${companyId}`);
-  redirect(`/companies/${companyId}`);
 }
 
 export async function logReview(companyId: string, formData: FormData) {

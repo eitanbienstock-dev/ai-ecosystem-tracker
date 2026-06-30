@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { Portfolio } from "./NewPortfolioModal";
 
 type CompanyOption = {
   company_id: string;
   name: string;
   ticker: string | null;
+  ai_category: string | null;
+  research_status: string;
   composite_score: number | null;
   confidence_score: number | null;
 };
+
+type PartnershipRow = { company_id: string; partner_name: string };
 
 type AddResult = { positions: number; deployed: number };
 
@@ -27,6 +31,7 @@ function fmt$(n: number) {
 
 export default function ManualPositionsModal({ portfolio, onClose, onDone }: Props) {
   const [availableCompanies, setAvailableCompanies] = useState<CompanyOption[]>([]);
+  const [partnerships, setPartnerships] = useState<PartnershipRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [loadingCompanies, setLoadingCompanies] = useState(false);
@@ -45,7 +50,10 @@ export default function ManualPositionsModal({ portfolio, onClose, onDone }: Pro
     setLoadingCompanies(true);
     fetch("/api/portfolios/model-preview")
       .then((r) => r.json())
-      .then(({ companies }) => setAvailableCompanies(companies ?? []))
+      .then(({ companies, partnerships }) => {
+        setAvailableCompanies(companies ?? []);
+        setPartnerships(partnerships ?? []);
+      })
       .finally(() => setLoadingCompanies(false));
   }, []);
 
@@ -130,6 +138,48 @@ export default function ManualPositionsModal({ portfolio, onClose, onDone }: Pro
 
   // Selected rows, sorted the same way as the checklist for a stable order
   const selectedRows = filteredCompanies.filter((c) => selectedIds.has(c.company_id));
+
+  // Current holdings (across all portfolios) and their disclosed partners, used
+  // to flag category and partner overlap before capital is committed.
+  const holdings = availableCompanies.filter((c) => c.research_status === "holding");
+  const partnersByCompany = new Map<string, string[]>();
+  for (const p of partnerships) {
+    const list = partnersByCompany.get(p.company_id) ?? [];
+    list.push(p.partner_name);
+    partnersByCompany.set(p.company_id, list);
+  }
+
+  type Flags = {
+    lowConfidence: boolean;
+    categoryOverlap: string[];
+    partnerOverlap: { partner: string; holdings: string[] }[];
+  };
+
+  function flagsFor(c: CompanyOption): Flags {
+    const lowConfidence = c.confidence_score !== null && c.confidence_score < 3;
+
+    const categoryOverlap = c.ai_category
+      ? holdings.filter((h) => h.company_id !== c.company_id && h.ai_category === c.ai_category).map((h) => h.name)
+      : [];
+
+    const candidatePartners = new Set(partnersByCompany.get(c.company_id) ?? []);
+    const byPartner = new Map<string, Set<string>>();
+    if (candidatePartners.size > 0) {
+      for (const h of holdings) {
+        if (h.company_id === c.company_id) continue;
+        for (const partner of partnersByCompany.get(h.company_id) ?? []) {
+          if (!candidatePartners.has(partner)) continue;
+          (byPartner.get(partner) ?? byPartner.set(partner, new Set()).get(partner)!).add(h.name);
+        }
+      }
+    }
+    const partnerOverlap = Array.from(byPartner.entries()).map(([partner, names]) => ({
+      partner,
+      holdings: Array.from(names),
+    }));
+
+    return { lowConfidence, categoryOverlap, partnerOverlap };
+  }
 
   function sharesFor(id: string): number | null {
     const price = priceMap.get(id);
@@ -315,55 +365,90 @@ export default function ManualPositionsModal({ portfolio, onClose, onDone }: Pro
                           const price = priceMap.get(c.company_id);
                           const priceNeeded = price === null || price === undefined || price <= 0;
                           const shares = sharesFor(c.company_id);
+                          const flags = flagsFor(c);
+                          const hasFlags =
+                            flags.lowConfidence || flags.categoryOverlap.length > 0 || flags.partnerOverlap.length > 0;
                           return (
-                            <tr key={c.company_id} className={`border-b border-line/50 last:border-0 ${syncingPrices ? "opacity-50" : ""}`}>
-                              <td className="px-3 py-2">
-                                <span className="font-medium text-[#e7e8ea]">{c.name}</span>
-                                <br />
-                                <span className="font-mono text-[10px] text-muted">
-                                  {c.ticker ?? "—"}
-                                  {c.composite_score != null && (
-                                    <>
-                                      {" · "}
-                                      <span className="text-[#cfd1d5]">{c.composite_score}</span>
-                                      {"  "}
-                                      <span>{c.confidence_score ?? "—"}/5</span>
-                                    </>
+                            <Fragment key={c.company_id}>
+                              <tr
+                                className={`${hasFlags ? "" : "border-b"} border-line/50 last:border-0 ${syncingPrices ? "opacity-50" : ""}`}
+                              >
+                                <td className="px-3 py-2">
+                                  <span className="font-medium text-[#e7e8ea]">{c.name}</span>
+                                  <br />
+                                  <span className="font-mono text-[10px] text-muted">
+                                    {c.ticker ?? "—"}
+                                    {c.composite_score != null && (
+                                      <>
+                                        {" · "}
+                                        <span className="text-[#cfd1d5]">{c.composite_score}</span>
+                                        {"  "}
+                                        <span>{c.confidence_score ?? "—"}/5</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <span className="text-muted">$</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={dollarAmounts.get(c.company_id) ?? ""}
+                                      onChange={(e) => setAmount(c.company_id, e.target.value)}
+                                      className="input w-24 text-right text-xs"
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-right font-mono">
+                                  {shares === null ? (
+                                    <span className="text-muted">—</span>
+                                  ) : (
+                                    <span className="text-[#e7e8ea]">{shares}</span>
                                   )}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <span className="text-muted">$</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={dollarAmounts.get(c.company_id) ?? ""}
-                                    onChange={(e) => setAmount(c.company_id, e.target.value)}
-                                    className="input w-24 text-right text-xs"
-                                    placeholder="0"
-                                  />
-                                </div>
-                              </td>
-                              <td className="px-3 py-2 text-right font-mono">
-                                {shares === null ? (
-                                  <span className="text-muted">—</span>
-                                ) : (
-                                  <span className="text-[#e7e8ea]">{shares}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-right font-mono">
-                                {priceNeeded ? (
-                                  <span className="text-[10px] text-signal">price unavailable</span>
-                                ) : (
-                                  <span className="text-muted">${Number(price).toFixed(2)}</span>
-                                )}
-                              </td>
-                            </tr>
+                                </td>
+                                <td className="px-3 py-2 text-right font-mono">
+                                  {priceNeeded ? (
+                                    <span className="text-[10px] text-signal">price unavailable</span>
+                                  ) : (
+                                    <span className="text-muted">${Number(price).toFixed(2)}</span>
+                                  )}
+                                </td>
+                              </tr>
+                              {hasFlags && (
+                                <tr className="border-b border-line/50 last:border-0">
+                                  <td colSpan={4} className="px-3 pb-2">
+                                    <div className="space-y-1 rounded bg-signal/10 p-2 text-[10px] leading-relaxed text-signal">
+                                      {flags.lowConfidence && (
+                                        <p>
+                                          Confidence is {c.confidence_score}/5, below the usual 3/5 floor for
+                                          committing capital. Not blocked, just worth confirming the underlying
+                                          data is solid before sizing this position.
+                                        </p>
+                                      )}
+                                      {flags.categoryOverlap.length > 0 && (
+                                        <p>
+                                          Same AI category as {flags.categoryOverlap.join(", ")}, already held.
+                                          Not blocked, just a concentration flag worth weighing.
+                                        </p>
+                                      )}
+                                      {flags.partnerOverlap.map((row) => (
+                                        <p key={row.partner}>
+                                          Shares disclosed partner {row.partner} with {row.holdings.join(", ")},
+                                          already held.
+                                        </p>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
                           );
                         })}
                       </tbody>
                     </table>
+
                   </div>
                 )}
               </div>

@@ -100,7 +100,7 @@ export default function MethodologyPage() {
           </li>
           <li>
             <a href="#concentration-flag" className="text-signal hover:underline">
-              Promotion-time concentration flag
+              Concentration flag in Add positions
             </a>
           </li>
           <li>
@@ -334,7 +334,8 @@ export default function MethodologyPage() {
           Transaction ledger
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          All position changes — buys, sells, trims — are recorded as individual transactions in a
+          All position changes, buys and sells, including partial sells recorded as a trim, are tracked as
+          individual transactions in a
           portfolio_transactions table rather than stored as flat current values on the company record.
           From that ledger, the system computes at read time: shares held (net of all buys and sells for
           that company in that portfolio), weighted average cost basis across all buys, total cost basis,
@@ -491,25 +492,24 @@ export default function MethodologyPage() {
       <section id="confidence-floor" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">Confidence floor</h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          Before a candidate is promoted from the Watched Pipeline into the Investment Portfolio, its
-          confidence score is checked. Below 3 out of 5, a warning appears asking for explicit confirmation
-          that the underlying data is solid enough to size real capital against. It is a soft flag, not a
-          hard rule, the decision to proceed stays a human one.
+          When a company is selected in the Add positions flow on a portfolio card, its confidence score is
+          checked. Below 3 out of 5, a warning appears under that row asking for explicit confirmation that
+          the underlying data is solid enough to size real capital against. It is a soft flag, not a hard
+          rule, the decision to proceed stays a human one.
         </p>
       </section>
 
       <section id="concentration-flag" className="mb-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-signal">
-          Promotion-time concentration flag
+          Concentration flag in Add positions
         </h2>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
-          The same promote screen checks the candidate against current holdings on two dimensions: whether
-          any invested holding already shares its AI category, and whether any invested holding has a
-          disclosed relationship with the same named partner. Both are non-blocking flags, not a calculated
-          score, since most overlap in this kind of book is structural rather than alarming, an AI
-          infrastructure thesis will naturally cluster around the same handful of hyperscalers and chip
-          suppliers. The flag exists so that clustering is visible at the moment of committing capital,
-          not to discourage it outright.
+          The same flow checks each selected candidate against current holdings on two dimensions: whether
+          any holding already shares its AI category, and whether any holding has a disclosed relationship
+          with the same named partner. Both are non-blocking flags, not a calculated score, since most
+          overlap in this kind of book is structural rather than alarming, an AI infrastructure thesis will
+          naturally cluster around the same handful of hyperscalers and chip suppliers. The flag exists so
+          that clustering is visible at the moment of committing capital, not to discourage it outright.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-[#cfd1d5]">
           Customer concentration at the company level, a single buyer accounting for a large share of
