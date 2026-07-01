@@ -18,6 +18,12 @@ function mapToNodes(aiCategory: string, sectorTags: string[]): string[] {
       const isFoundrySupport = tags.some(t =>
         ['semiconductor_metrology','process_control','advanced_packaging','semiconductor_test'].includes(t)
       );
+      const isMemory = tags.some(t =>
+        ['memory','hbm','ddr5','ip_licensing'].includes(t)
+      );
+      const isFpga = tags.some(t =>
+        ['fpga','server_management','edge_ai','ai_servers'].includes(t)
+      );
       // Marvell is explicitly named in the broadcom node of the diagram
       const isMarvell = isChip && isOptical && isNetworking;
 
@@ -25,6 +31,8 @@ function mapToNodes(aiCategory: string, sectorTags: string[]): string[] {
       if (isOptical || isNetworking) nodes.push('networking');
       if (isChip && !isMarvell) nodes.push('nvidia');
       if (isFoundrySupport) nodes.push('tsmc');
+      if (isMemory) { nodes.push('nvidia'); nodes.push('tsmc'); }
+      if (isFpga) nodes.push('neoclouds');
       break;
     }
     case 'compute_cloud':
@@ -95,7 +103,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('companies')
     .select(
-      'id, name, ticker, ai_category, sector_tags, research_status, description, moat_description, value_capture_direction, ecosystem_trajectory'
+      'id, name, ticker, ai_category, sector_tags, research_status, description, moat_description, value_capture_direction, ecosystem_trajectory, scores!inner(composite_score, confidence_score)'
     )
     .in('research_status', ['holding', 'watched'])
     .order('name', { ascending: true });
