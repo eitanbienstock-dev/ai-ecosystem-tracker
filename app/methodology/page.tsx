@@ -336,6 +336,20 @@ export default function MethodologyPage() {
           from the model. Position cards display both the current actual allocation and the original formula
           allocation side by side, and a visible badge flags any position that has been manually adjusted.
         </p>
+        <p className="mb-3 text-sm leading-relaxed text-[#cfd1d5]">
+          <span className="font-medium text-[#e7e8ea]">Weekly automated model</span> portfolios are
+          generated on a schedule, once a week on Saturday, without manual intervention. The job starts
+          from every Holding or Watched company that has a ticker, reads each company&apos;s most recent
+          score, and keeps only those whose confidence score is 3 or higher, so confidence acts as an
+          eligibility gate rather than a weight input here. The eligible names are ranked by composite
+          score and the top ten are selected. Each selected company is weighted by its composite score
+          divided by the sum of the ten composites, that weight is applied to a fixed one million dollar
+          capital base, and whole shares are bought at the live Finnhub price, with any name whose price
+          is unavailable or whose allocation buys less than one share skipped. Each buy is written to the
+          same portfolio_transactions ledger as every other position, with a note recording the composite,
+          weight, dollar allocation, and price source. The run is idempotent per day: the portfolio is
+          named for the date it is built, and a second run on the same day is a no-op.
+        </p>
         <p className="text-sm leading-relaxed text-[#cfd1d5]">
           Decision log entries are portfolio-scoped: each entry carries a portfolio_id foreign key linking
           it to the portfolio the decision relates to.
