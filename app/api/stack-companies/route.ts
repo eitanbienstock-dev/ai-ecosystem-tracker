@@ -100,10 +100,16 @@ function buildFitSummary(c: Record<string, any>): string {
 }
 
 export async function GET() {
+  const { data: scoredRows } = await supabase
+    .from('scores')
+    .select('company_id');
+
+  const scoredIds = new Set((scoredRows ?? []).map((r: Record<string, any>) => r.company_id));
+
   const { data, error } = await supabase
     .from('companies')
     .select(
-      'id, name, ticker, ai_category, sector_tags, research_status, description, moat_description, value_capture_direction, ecosystem_trajectory, scores!inner(composite_score, confidence_score)'
+      'id, name, ticker, ai_category, sector_tags, research_status, description, moat_description, value_capture_direction, ecosystem_trajectory'
     )
     .in('research_status', ['holding', 'watched'])
     .order('name', { ascending: true });
@@ -112,7 +118,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const companies = (data ?? []).map((c: Record<string, any>) => ({
+  const companies = (data ?? []).filter((c: Record<string, any>) => scoredIds.has(c.id)).map((c: Record<string, any>) => ({
     id: c.id,
     name: c.name,
     ticker: c.ticker,
