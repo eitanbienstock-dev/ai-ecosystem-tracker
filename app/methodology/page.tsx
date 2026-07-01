@@ -214,15 +214,16 @@ export default function MethodologyPage() {
         </p>
         <p className="mt-3 text-sm leading-relaxed text-[#cfd1d5]">
           Scoring order is a hard gate. The six-dimension composite and confidence score are
-          written only when two conditions are both fully satisfied: first, the most recent
-          primary filings, meaning the 10-Q, 10-K, 8-K, DEF 14A, and proxy statement, have
-          been read and every financial, balance sheet, and governance field confirmed directly
-          from the filing rather than estimated, inferred, or taken from a retail aggregator;
-          second, secondary research on ecosystem position, management track record, and analyst
-          context is also complete. Scoring is the final step in every case, never an
-          intermediate one. A score row inserted before primary research is done represents
-          incomplete data treated as a judgment call, which corrupts the confidence score and
-          degrades the IC correlation.
+          written only when all of the following are complete: the most recent primary filings,
+          meaning the 10-Q, 10-K, 8-K, DEF 14A, and proxy statement, have been read and every
+          financial, balance sheet, and governance field confirmed directly from the filing;
+          secondary research on ecosystem position, management track record, and analyst context
+          is done; the partnerships table has at minimum the named tier-1 relationships driving
+          the ecosystem thesis; and the catalysts table has at minimum two to three near-term
+          trackable events. Scoring is the final step in every case, never an intermediate one.
+          A score row inserted before primary research is done represents incomplete data treated
+          as a judgment call, which corrupts the confidence score and degrades the IC
+          correlation.
         </p>
         <p id="eligibility-screen" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
           Eligibility screen, enforced at intake
