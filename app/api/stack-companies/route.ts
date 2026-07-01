@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// Map ai_category + sector_tags to node IDs in the stack diagram
 function mapToNodes(aiCategory: string, sectorTags: string[]): string[] {
   const tags = sectorTags.map(t => t.toLowerCase());
   const nodes: string[] = [];
@@ -24,7 +23,6 @@ function mapToNodes(aiCategory: string, sectorTags: string[]): string[] {
       const isFpga = tags.some(t =>
         ['fpga','server_management','edge_ai','ai_servers'].includes(t)
       );
-      // Marvell is explicitly named in the broadcom node of the diagram
       const isMarvell = isChip && isOptical && isNetworking;
 
       if (isMarvell) nodes.push('broadcom');
@@ -100,11 +98,20 @@ function buildFitSummary(c: Record<string, any>): string {
 }
 
 export async function GET() {
-  const { data: scoredRows } = await supabase
+  const { data: scoreRows } = await supabase
     .from('scores')
-    .select('company_id');
+    .select('company_id, ecosystem_synthesis, scored_at, created_at')
+    .order('scored_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  const scoredIds = new Set((scoredRows ?? []).map((r: Record<string, any>) => r.company_id));
+  const synthesisMap: Record<string, string | null> = {};
+  const scoredIds = new Set<string>();
+  for (const row of (scoreRows ?? []) as Record<string, any>[]) {
+    scoredIds.add(row.company_id);
+    if (!(row.company_id in synthesisMap)) {
+      synthesisMap[row.company_id] = row.ecosystem_synthesis ?? null;
+    }
+  }
 
   const { data, error } = await supabase
     .from('companies')
@@ -118,15 +125,18 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const companies = (data ?? []).filter((c: Record<string, any>) => scoredIds.has(c.id)).map((c: Record<string, any>) => ({
-    id: c.id,
-    name: c.name,
-    ticker: c.ticker,
-    research_status: c.research_status,
-    ai_category: c.ai_category,
-    nodes: mapToNodes(c.ai_category ?? '', c.sector_tags ?? []),
-    fit_summary: buildFitSummary(c),
-  }));
+  const companies = (data ?? [])
+    .filter((c: Record<string, any>) => scoredIds.has(c.id))
+    .map((c: Record<string, any>) => ({
+      id: c.id,
+      name: c.name,
+      ticker: c.ticker,
+      research_status: c.research_status,
+      ai_category: c.ai_category,
+      nodes: mapToNodes(c.ai_category ?? '', c.sector_tags ?? []),
+      fit_summary: buildFitSummary(c),
+      ecosystem_synthesis: synthesisMap[c.id] ?? null,
+    }));
 
   return NextResponse.json({ companies });
 }

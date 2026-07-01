@@ -480,7 +480,9 @@ export default function MethodologyPage() {
           </Link>{" "}
           page is the conceptual lens for resolving leverage calls: a company&apos;s leverage is assessed by
           where it sits in the stack and whether structural power accrues to its node or flows up or
-          downstream to suppliers and customers.
+          downstream to suppliers and customers. Tracing a company on that diagram lights up the nodes it
+          occupies and, when its most recent score carries one, surfaces that score&apos;s ecosystem
+          synthesis as a plain-language &ldquo;What this means&rdquo; explainer of its position.
         </p>
       </section>
 
