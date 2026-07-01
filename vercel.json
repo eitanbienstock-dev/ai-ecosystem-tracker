@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/snapshot-prices",
       "schedule": "30 21 * * 1-5"
+    },
+    {
+      "path": "/api/weekly-portfolio",
+      "schedule": "0 14 * * 6"
     }
   ]
 }
