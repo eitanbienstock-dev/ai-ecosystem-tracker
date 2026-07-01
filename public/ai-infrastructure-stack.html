@@ -825,7 +825,8 @@
           ticker:c.ticker,
           research_status:c.research_status==='holding'?'invested':'pipeline',
           nodes:c.nodes||[],
-          note:c.fit_summary||''
+          note:c.fit_summary||'',
+          ecosystem_synthesis:c.ecosystem_synthesis||null
         }));
         buildCompanyDropdown();
       })
