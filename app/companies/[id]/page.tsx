@@ -432,18 +432,23 @@ export default async function CompanyDetailPage({
             {(partnerships as Partnership[]).map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between border-b border-line py-2 text-sm last:border-0"
+                className="border-b border-line py-2 text-sm last:border-0"
               >
-                <div>
-                  <span className="font-medium text-[#e7e8ea]">{p.partner_name}</span>
-                  {p.partner_tier && (
-                    <span className="ml-2 text-xs text-muted">{p.partner_tier.replace("_", " ")}</span>
-                  )}
-                  {p.deal_type && (
-                    <span className="ml-2 text-xs text-muted">· {p.deal_type.replace("_", " ")}</span>
-                  )}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium text-[#e7e8ea]">{p.partner_name}</span>
+                    {p.partner_tier && (
+                      <span className="ml-2 text-xs text-muted">{p.partner_tier.replace("_", " ")}</span>
+                    )}
+                    {p.deal_type && (
+                      <span className="ml-2 text-xs text-muted">· {p.deal_type.replace("_", " ")}</span>
+                    )}
+                  </div>
+                  <span className="font-mono text-xs text-muted">{p.deal_date ?? ""}</span>
                 </div>
-                <span className="font-mono text-xs text-muted">{p.deal_date ?? ""}</span>
+                {p.notes && (
+                  <p className="mt-1 text-xs leading-relaxed text-[#cfd1d5]">{p.notes}</p>
+                )}
               </div>
             ))}
           </div>
